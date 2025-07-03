@@ -1,0 +1,703 @@
+# 知识树接口文档
+
+## 接口概述
+知识树模块提供用户知识结构可视化功能的API接口。根据PRD需求变更，本期暂不实现删除、分享、导出、学习建议、解锁节点、分类列表和学习进度更新功能。新增学习笔记上传和知识树关联笔记功能。
+
+## 1. 获取知识树数据
+
+### 接口信息
+- **接口路径**: `/api/knowledge-tree/data`
+- **请求方法**: GET
+- **接口描述**: 获取知识树的完整数据结构，用于前端D3.js渲染
+
+### 请求参数
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| userId | Long | 是 | 用户ID |
+| treeId | Long | 否 | 知识树ID，不传则返回默认知识树 |
+
+### 请求示例
+```
+GET /api/knowledge-tree/data?userId=1001&treeId=1001
+```
+
+### 响应参数
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| code | Integer | 响应码，200表示成功 |
+| message | String | 响应消息 |
+| data | Object | 知识树数据 |
+| data.name | String | 根节点名称 |
+| data.category | String | 根节点类别 |
+| data.children | Array | 子节点数组 |
+| data.children[].name | String | 节点名称 |
+| data.children[].category | String | 节点类别 |
+| data.children[].progress | Integer | 学习进度（0-100） |
+| data.children[].description | String | 节点描述 |
+| data.children[].relatedNodes | Array | 相关知识点列表 |
+| data.children[].children | Array | 子节点（递归结构） |
+
+### 响应示例
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "name": "我的知识体系",
+    "category": "核心",
+    "children": [
+      {
+        "name": "前端开发",
+        "category": "技术",
+        "progress": 80,
+        "description": "前端开发是创建网站或应用的Web界面呈现给用户的过程。",
+        "children": [
+          {
+            "name": "JavaScript",
+            "category": "前端开发",
+            "progress": 75,
+            "description": "JavaScript是一种具有函数优先的轻量级编程语言。",
+            "relatedNodes": ["变量与数据类型", "函数与作用域", "事件循环"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## 2. 搜索知识节点
+
+### 接口信息
+- **接口路径**: `/api/knowledge-tree/search`
+- **请求方法**: GET
+- **接口描述**: 根据关键词搜索知识节点
+
+### 请求参数
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| userId | Long | 是 | 用户ID |
+| keyword | String | 是 | 搜索关键词 |
+
+### 请求示例
+```
+GET /api/knowledge-tree/search?userId=1001&keyword=JavaScript
+```
+
+### 响应参数
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| code | Integer | 响应码 |
+| message | String | 响应消息 |
+| data | Array | 搜索结果 |
+| data[].nodeId | String | 节点ID |
+| data[].name | String | 节点名称 |
+| data[].category | String | 节点类别 |
+| data[].description | String | 节点描述 |
+| data[].progress | Integer | 学习进度 |
+| data[].path | Array | 节点路径（从根到当前节点） |
+
+### 响应示例
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "nodeId": "js_001",
+      "name": "JavaScript",
+      "category": "前端开发",
+      "description": "JavaScript是一种具有函数优先的轻量级编程语言。",
+      "progress": 75,
+      "path": ["我的知识体系", "前端开发", "JavaScript"]
+    }
+  ]
+}
+```
+
+## 3. 获取节点详细信息
+
+### 接口信息
+- **接口路径**: `/api/knowledge-tree/node/{nodeId}`
+- **请求方法**: GET
+- **接口描述**: 获取指定节点的详细信息
+
+### 请求参数
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| nodeId | String | 是 | 节点ID（路径参数） |
+| userId | Long | 是 | 用户ID |
+
+### 请求示例
+```
+GET /api/knowledge-tree/node/js_001?userId=1001
+```
+
+### 响应参数
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| code | Integer | 响应码 |
+| message | String | 响应消息 |
+| data | Object | 节点详细信息 |
+| data.nodeId | String | 节点ID |
+| data.name | String | 节点名称 |
+| data.category | String | 节点类别 |
+| data.description | String | 节点描述 |
+| data.progress | Integer | 学习进度（0-100） |
+| data.relatedNodes | Array | 相关知识点列表 |
+| data.children | Array | 子节点列表 |
+| data.parent | Object | 父节点信息 |
+| data.learningResources | Array | 学习资源列表 |
+
+### 响应示例
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "nodeId": "js_001",
+    "name": "JavaScript",
+    "category": "前端开发",
+    "description": "JavaScript是一种具有函数优先的轻量级编程语言。",
+    "progress": 75,
+    "relatedNodes": ["变量与数据类型", "函数与作用域", "事件循环"],
+    "children": [
+      {
+        "nodeId": "js_es6_001",
+        "name": "ES6+",
+        "progress": 70
+      }
+    ],
+    "parent": {
+      "nodeId": "frontend_001",
+      "name": "前端开发"
+    },
+    "learningResources": [
+      {
+        "type": "video",
+        "title": "JavaScript基础教程",
+        "url": "https://example.com/js-tutorial"
+      }
+    ]
+  }
+}
+```
+
+## 4. 上传学习笔记
+
+### 接口信息
+- **接口路径**: `/api/notes/upload`
+- **请求方法**: POST
+- **接口描述**: 支持用户上传学习笔记到笔记本中，支持txt文件上传或纯文本输入
+
+### 请求参数
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| userId | Long | 是 | 用户ID |
+| title | String | 是 | 笔记标题 |
+| content | String | 否 | 纯文本内容（与file二选一） |
+| file | File | 否 | txt文件（与content二选一） |
+| tags | Array | 否 | 标签列表 |
+
+### 请求示例
+```json
+{
+  "userId": 1001,
+  "title": "JavaScript学习笔记",
+  "content": "JavaScript是一种动态类型的编程语言。\n\n主要特点：\n1. 弱类型语言\n2. 解释型语言\n3. 支持面向对象编程\n\n基础语法：\n- 变量声明：let, const, var\n- 函数定义：function关键字\n- 对象创建：字面量语法\n\n高级特性：\n- 闭包\n- 原型链\n- 异步编程",
+  "tags": ["前端", "JavaScript", "编程语言"]
+}
+```
+
+### 响应参数
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| code | Integer | 响应码 |
+| message | String | 响应消息 |
+| data | Object | 上传结果 |
+| data.noteId | Long | 笔记ID |
+| data.title | String | 笔记标题 |
+| data.status | String | 处理状态（processing-处理中，completed-完成，failed-失败） |
+| data.aiTaskId | String | AI处理任务ID |
+| data.uploadTime | String | 上传时间 |
+
+### 响应示例
+```json
+{
+  "code": 200,
+  "message": "笔记上传成功，正在进行AI分析",
+  "data": {
+    "noteId": 2001,
+    "title": "JavaScript学习笔记",
+    "status": "processing",
+    "aiTaskId": "ai_task_abc123",
+    "uploadTime": "2024-01-21 10:30:00"
+  }
+}
+```
+
+## 5. 获取笔记AI分析结果
+
+### 接口信息
+- **接口路径**: `/api/notes/{noteId}/analysis`
+- **请求方法**: GET
+- **接口描述**: 获取大模型分析笔记后提炼的纲要及知识点
+
+### 请求参数
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| noteId | Long | 是 | 笔记ID（路径参数） |
+| userId | Long | 是 | 用户ID |
+
+### 请求示例
+```
+GET /api/notes/2001/analysis?userId=1001
+```
+
+### 响应参数
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| code | Integer | 响应码 |
+| message | String | 响应消息 |
+| data | Object | 分析结果 |
+| data.noteId | Long | 笔记ID |
+| data.status | String | 分析状态 |
+| data.outline | Object | 笔记纲要 |
+| data.outline.title | String | 主题标题 |
+| data.outline.summary | String | 内容摘要 |
+| data.outline.mainPoints | Array | 主要观点列表 |
+| data.knowledgePoints | Array | 提炼的知识点 |
+| data.knowledgePoints[].name | String | 知识点名称 |
+| data.knowledgePoints[].category | String | 知识点分类 |
+| data.knowledgePoints[].description | String | 知识点描述 |
+| data.knowledgePoints[].keywords | Array | 关键词列表 |
+| data.knowledgePoints[].difficulty | String | 难度级别 |
+| data.analysisTime | String | 分析完成时间 |
+
+### 响应示例
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "noteId": 2001,
+    "status": "completed",
+    "outline": {
+      "title": "JavaScript编程语言基础",
+      "summary": "本笔记介绍了JavaScript的基本特点、语法和高级特性，适合初学者了解JavaScript的核心概念。",
+      "mainPoints": [
+        "JavaScript是动态类型的解释型语言",
+        "支持多种编程范式",
+        "具有闭包、原型链等高级特性"
+      ]
+    },
+    "knowledgePoints": [
+      {
+        "name": "JavaScript语言特性",
+        "category": "编程语言基础",
+        "description": "JavaScript是一种弱类型、解释型的动态编程语言，支持面向对象编程。",
+        "keywords": ["弱类型", "解释型", "动态", "面向对象"],
+        "difficulty": "beginner"
+      },
+      {
+        "name": "变量声明",
+        "category": "语法基础",
+        "description": "JavaScript中可以使用let、const、var关键字声明变量，具有不同的作用域规则。",
+        "keywords": ["let", "const", "var", "作用域"],
+        "difficulty": "beginner"
+      },
+      {
+        "name": "闭包",
+        "category": "高级特性",
+        "description": "闭包是JavaScript中的重要概念，允许内部函数访问外部函数的变量。",
+        "keywords": ["闭包", "作用域链", "内存管理"],
+        "difficulty": "intermediate"
+      },
+      {
+        "name": "原型链",
+        "category": "高级特性",
+        "description": "JavaScript通过原型链实现继承机制，是理解对象继承的关键概念。",
+        "keywords": ["原型", "继承", "prototype"],
+        "difficulty": "intermediate"
+      }
+    ],
+    "analysisTime": "2024-01-21 10:35:00"
+  }
+}
+```
+
+## 6. 获取用户笔记列表
+
+### 接口信息
+- **接口路径**: `/api/notes/list`
+- **请求方法**: GET
+- **接口描述**: 获取用户的所有学习笔记列表
+
+### 请求参数
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| userId | Long | 是 | 用户ID |
+| page | Integer | 否 | 页码，默认1 |
+| size | Integer | 否 | 每页大小，默认10 |
+| status | String | 否 | 筛选状态（processing/completed/failed） |
+
+### 请求示例
+```
+GET /api/notes/list?userId=1001&page=1&size=10&status=completed
+```
+
+### 响应参数
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| code | Integer | 响应码 |
+| message | String | 响应消息 |
+| data | Object | 响应数据 |
+| data.total | Long | 总记录数 |
+| data.list | Array | 笔记列表 |
+| data.list[].noteId | Long | 笔记ID |
+| data.list[].title | String | 笔记标题 |
+| data.list[].status | String | 处理状态 |
+| data.list[].tags | Array | 标签列表 |
+| data.list[].knowledgePointCount | Integer | 提炼的知识点数量 |
+| data.list[].uploadTime | String | 上传时间 |
+| data.list[].analysisTime | String | 分析完成时间 |
+
+### 响应示例
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "total": 5,
+    "list": [
+      {
+        "noteId": 2001,
+        "title": "JavaScript学习笔记",
+        "status": "completed",
+        "tags": ["前端", "JavaScript", "编程语言"],
+        "knowledgePointCount": 4,
+        "uploadTime": "2024-01-21 10:30:00",
+        "analysisTime": "2024-01-21 10:35:00"
+      },
+      {
+        "noteId": 2002,
+        "title": "React框架学习",
+        "status": "completed",
+        "tags": ["前端", "React", "框架"],
+        "knowledgePointCount": 6,
+        "uploadTime": "2024-01-20 14:20:00",
+        "analysisTime": "2024-01-20 14:25:00"
+      }
+    ]
+  }
+}
+```
+
+## 7. 知识树关联笔记
+
+### 接口信息
+- **接口路径**: `/api/knowledge-tree/associate-notes`
+- **请求方法**: POST
+- **接口描述**: 用户在知识树页面给知识树"灌输"知识，即选择笔记关联到知识树
+
+### 请求参数
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| userId | Long | 是 | 用户ID |
+| treeId | Long | 是 | 知识树ID |
+| noteIds | Array | 是 | 要关联的笔记ID列表 |
+
+### 请求示例
+```json
+{
+  "userId": 1001,
+  "treeId": 1001,
+  "noteIds": [2001, 2002]
+}
+```
+
+### 响应参数
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| code | Integer | 响应码 |
+| message | String | 响应消息 |
+| data | Object | 关联结果 |
+| data.treeId | Long | 知识树ID |
+| data.associatedNotes | Array | 成功关联的笔记 |
+| data.associatedNotes[].noteId | Long | 笔记ID |
+| data.associatedNotes[].title | String | 笔记标题 |
+| data.associatedNotes[].matchedNodes | Array | 匹配的知识树节点 |
+| data.newKnowledgePoints | Array | 新增的知识点 |
+| data.updatedTree | Object | 更新后的知识树数据（简化版） |
+| data.processTime | String | 处理时间 |
+
+### 响应示例
+```json
+{
+  "code": 200,
+  "message": "笔记关联成功，知识树已更新",
+  "data": {
+    "treeId": 1001,
+    "associatedNotes": [
+      {
+        "noteId": 2001,
+        "title": "JavaScript学习笔记",
+        "matchedNodes": ["js_001", "js_closure_001", "js_prototype_001"]
+      },
+      {
+        "noteId": 2002,
+        "title": "React框架学习",
+        "matchedNodes": ["react_001", "react_hooks_001"]
+      }
+    ],
+    "newKnowledgePoints": [
+      {
+        "nodeId": "js_closure_001",
+        "name": "闭包",
+        "category": "JavaScript高级特性",
+        "parentNodeId": "js_001"
+      },
+      {
+        "nodeId": "js_prototype_001",
+        "name": "原型链",
+        "category": "JavaScript高级特性",
+        "parentNodeId": "js_001"
+      }
+    ],
+    "updatedTree": {
+      "totalNodes": 125,
+      "newNodesCount": 2,
+      "updatedNodesCount": 3
+    },
+    "processTime": "2024-01-21 16:30:00"
+  }
+}
+```
+
+## 8. 获取更新后的知识树数据
+
+### 接口信息
+- **接口路径**: `/api/knowledge-tree/data/updated`
+- **请求方法**: GET
+- **接口描述**: 获取关联笔记后更新的完整知识树数据
+
+### 请求参数
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| userId | Long | 是 | 用户ID |
+| treeId | Long | 是 | 知识树ID |
+| includeNoteInfo | Boolean | 否 | 是否包含关联笔记信息，默认false |
+
+### 请求示例
+```
+GET /api/knowledge-tree/data/updated?userId=1001&treeId=1001&includeNoteInfo=true
+```
+
+### 响应参数
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| code | Integer | 响应码 |
+| message | String | 响应消息 |
+| data | Object | 更新后的知识树数据 |
+| data.name | String | 根节点名称 |
+| data.category | String | 根节点类别 |
+| data.lastUpdateTime | String | 最后更新时间 |
+| data.associatedNotesCount | Integer | 关联笔记数量 |
+| data.children | Array | 子节点数组（包含新增节点） |
+| data.children[].noteInfo | Object | 关联笔记信息（当includeNoteInfo=true时） |
+| data.children[].noteInfo.noteIds | Array | 关联的笔记ID列表 |
+| data.children[].noteInfo.noteTitles | Array | 关联的笔记标题列表 |
+
+### 响应示例
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "name": "我的知识体系",
+    "category": "核心",
+    "lastUpdateTime": "2024-01-21 16:30:00",
+    "associatedNotesCount": 2,
+    "children": [
+      {
+        "name": "前端开发",
+        "category": "技术",
+        "progress": 85,
+        "description": "前端开发相关技术栈",
+        "children": [
+          {
+            "name": "JavaScript",
+            "category": "前端开发",
+            "progress": 80,
+            "description": "JavaScript编程语言",
+            "noteInfo": {
+              "noteIds": [2001],
+              "noteTitles": ["JavaScript学习笔记"]
+            },
+            "children": [
+              {
+                "name": "闭包",
+                "category": "JavaScript高级特性",
+                "progress": 0,
+                "description": "JavaScript闭包概念和应用",
+                "noteInfo": {
+                  "noteIds": [2001],
+                  "noteTitles": ["JavaScript学习笔记"]
+                }
+              },
+              {
+                "name": "原型链",
+                "category": "JavaScript高级特性",
+                "progress": 0,
+                "description": "JavaScript原型链继承机制",
+                "noteInfo": {
+                  "noteIds": [2001],
+                  "noteTitles": ["JavaScript学习笔记"]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## 错误码说明
+
+| 错误码 | 错误信息 | 描述 |
+|--------|----------|------|
+| 200 | success | 请求成功 |
+| 400 | 参数错误 | 请求参数不正确 |
+| 401 | 未授权 | 用户未登录或token无效 |
+| 403 | 权限不足 | 用户无权限访问该资源 |
+| 404 | 资源不存在 | 请求的知识树、节点或笔记不存在 |
+| 409 | 资源冲突 | 数据冲突，如笔记已关联等 |
+| 413 | 文件过大 | 上传的文件超过大小限制 |
+| 415 | 文件类型不支持 | 上传的文件类型不支持 |
+| 500 | 服务器内部错误 | 系统内部错误 |
+| 502 | AI服务异常 | 大模型分析服务异常 |
+
+## 数据模型说明
+
+### 知识树数据结构
+- 采用树形结构存储，支持无限层级嵌套
+- 每个节点包含基本信息、学习进度、相关知识点等
+- 支持动态添加新节点（通过笔记关联）
+- 前端使用D3.js进行可视化渲染
+
+### 学习笔记数据结构
+- 支持txt文件上传和纯文本输入
+- 通过大模型AI分析提炼知识点
+- 知识点以JSON格式存储，包含分类、描述、关键词等
+- 支持与知识树节点的智能匹配和关联
+
+### AI分析流程
+1. 用户上传笔记后，系统异步调用大模型接口
+2. 大模型分析笔记内容，提炼纲要和知识点
+3. 返回结构化的JSON数据，包含知识点分类和描述
+4. 系统存储分析结果，用户可查询分析状态
+
+### 知识树关联机制
+1. 用户选择笔记关联到知识树
+2. 系统根据笔记中的知识点匹配现有节点
+3. 自动创建新节点或更新现有节点信息
+4. 返回更新后的知识树结构
+
+### 前端集成说明
+- 知识树数据通过D3.js库进行可视化渲染
+- 支持缩放、平移、搜索等交互功能
+- 节点点击可查看详细信息和关联笔记
+- 新增"灌输知识"功能，支持选择笔记关联
+
+### 性能考虑
+- 大模型分析采用异步处理，避免阻塞用户操作
+- 知识树更新采用增量更新策略
+- 大型知识树采用按需加载策略
+- 文件上传支持进度显示和断点续传
+
+### 安全考虑
+- 所有接口需要用户身份验证
+- 文件上传限制类型和大小
+- 用户数据隔离，防止越权访问
+- AI分析结果加密存储
+- 敏感操作记录日志
+
+## 本期功能范围说明
+
+根据PRD需求变更，本期知识树功能包括：
+1. ✅ 知识树数据展示和可视化
+2. ✅ 搜索功能
+3. ✅ 节点详细信息查看
+4. ✅ 学习笔记上传功能（新增）
+5. ✅ AI分析笔记提炼知识点（新增）
+6. ✅ 知识树关联笔记功能（新增）
+7. ❌ 分类列表功能（暂不开发）
+8. ❌ 学习进度更新功能（暂不开发）
+9. ❌ 删除知识树功能（暂不开发）
+10. ❌ 分享知识树功能（暂不开发）
+11. ❌ 导出知识树功能（暂不开发）
+12. ❌ 学习建议功能（暂不开发）
+13. ❌ 解锁知识节点功能（暂不开发）
+
+新增功能说明：
+- 支持txt文件上传和纯文本输入
+- 集成大模型AI分析，自动提炼知识点
+- 智能匹配笔记知识点到知识树节点
+- 动态更新知识树结构，支持新节点创建
+
+前端筛选功能通过JavaScript在客户端实现，无需后端API支持。后续版本将根据用户反馈和产品规划逐步完善其他功能。
+## 知识点处理模型更新说明
+
+为了简化知识点关联逻辑，提高系统的一致性和可维护性，我们对知识点处理模型进行了更新。
+
+### 更新后的知识点处理模型
+
+```json
+{
+  "knowledgePoints": [
+    {
+      "knowledgePointId": "kp_001",
+      "knowledgePointName": "Java语法",
+      "targetNodeId": "node_001",  // 父节点ID
+      "newNodeName": "Java语法",    // 新节点的名称
+      "relevanceScore": 0.85
+    },
+    {
+      "knowledgePointId": "kp_002",
+      "knowledgePointName": "Lambda表达式",
+      "targetNodeId": "kp_001",    // 引用前面创建的节点作为父节点
+      "newNodeName": "Lambda表达式",
+      "relevanceScore": 0.75
+    }
+  ]
+}
+```
+
+### 处理逻辑说明
+
+1. **统一创建模型**：
+   - 所有由模型识别的知识点都创建为新节点
+   - 每个知识点节点都有一个父节点，通过targetNodeId指定
+   - 可以引用已有节点或本次新创建的节点作为父节点
+
+2. **处理顺序**：
+   - 按照返回列表的顺序依次处理
+   - 如果存在依赖关系，被依赖的节点应排在前面
+
+3. **节点关系**：
+   - 每个节点只有一个父节点，形成树形结构
+   - 通过ID映射，可以引用本次创建的其他节点
+
+4. **错误处理**：
+   - 如果指定的父节点不存在，会回退到使用根节点
+
+### 优势
+
+1. **统一处理流程**：不再区分不同类型的关联方式，所有知识点都创建新节点并关联
+2. **支持节点间依赖**：可以创建层次化的知识结构，一个知识点可以作为另一个知识点的父节点
+3. **简化代码逻辑**：统一的处理方式减少了条件判断和特殊处理
+4. **更清晰的语义**：每个字段的含义更加明确，减少歧义
+
+这种设计使知识树能够更加灵活地成长，同时保持了清晰的层次结构，有助于用户更好地组织和理解知识内容。 

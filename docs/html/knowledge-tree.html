@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识树 - 我的知识体系</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            z-index: 100;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+        }
+
+        .btn:hover {
+            background-color: #f5f5f5;
+        }
+
+        .btn-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .search-bar {
+            position: fixed;
+            top: 70px;
+            left: 16px;
+            right: 16px;
+            height: 44px;
+            background-color: #fff;
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            box-shadow: var(--shadow-sm);
+            z-index: 90;
+        }
+
+        .search-icon {
+            width: 20px;
+            height: 20px;
+            color: #999;
+            margin-right: 8px;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .filter-chips {
+            position: fixed;
+            top: 130px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            padding: 0 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            z-index: 80;
+        }
+
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 16px;
+            height: 32px;
+            background-color: #fff;
+            border-radius: 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .filter-chip.active {
+            background-color: var(--primary-color-light);
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .knowledge-tree-container {
+            width: 100%;
+            height: 100%;
+            padding-top: 180px;
+            padding-bottom: 60px; /* 为底部导航栏留出空间 */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #knowledge-tree {
+            width: 100%;
+            height: 100%;
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .node circle {
+            fill: #fff;
+            stroke: #1890ff;
+            stroke-width: 2px;
+        }
+
+        .node-text {
+            font-size: 12px;
+            font-family: "PingFang SC", sans-serif;
+            pointer-events: none;
+        }
+
+        .node.highlight circle {
+            stroke-width: 3px;
+            stroke: #ff4d4f;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1.5px;
+            transition: opacity 0.3s ease;
+        }
+        
+        .node, .node-text {
+            transition: opacity 0.3s ease;
+        }
+        
+        .hidden {
+            pointer-events: none;
+        }
+
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+        }
+
+        .zoom-btn:hover {
+            background-color: #f5f5f5;
+        }
+
+        .node-details {
+            position: fixed;
+            bottom: -280px;
+            left: 16px;
+            right: 16px;
+            height: 280px;
+            background-color: #fff;
+            border-radius: 16px 16px 0 0;
+            padding: 24px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .node-details.show {
+            transform: translateY(-280px);
+        }
+
+        .node-details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .node-details-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .node-details-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .node-details-close:hover {
+            background-color: #f5f5f5;
+        }
+
+        .node-details-category {
+            display: inline-block;
+            padding: 4px 12px;
+            background-color: #e8f3ff;
+            color: #1890ff;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .node-details-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .node-details-progress {
+            margin-bottom: 16px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background-color: #f0f0f0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-value {
+            height: 100%;
+            background-color: #1890ff;
+            border-radius: 2px;
+            width: 75%;
+        }
+
+        .node-details-related {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .related-nodes {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .related-node {
+            padding: 6px 12px;
+            background-color: #f5f5f5;
+            border-radius: 16px;
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .filter-chip {
+                font-size: 12px;
+                padding: 0 12px;
+            }
+            
+            .node-details {
+                padding: 16px;
+            }
+            
+            .node-details-title {
+                font-size: 18px;
+            }
+        }
+        
+        /* 顶部导航栏样式 */
+        .navbar {
+            height: 56px;
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+        
+        .navbar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .navbar-actions .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            box-shadow: none;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 4px;
+            padding: 6px 12px; /* 调整内边距以匹配知识地图 */
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .navbar-actions .btn:hover {
+            background-color: rgba(30, 136, 229, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        /* 视图切换菜单 */
+        .view-switch-menu {
+            position: absolute;
+            top: 56px;
+            right: 16px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            z-index: 100;
+            overflow: hidden;
+            display: none;
+            transition: all 0.3s ease;
+            transform-origin: top right;
+            transform: scale(0.9);
+            opacity: 0;
+            width: 240px;
+        }
+        
+        .view-switch-menu.show {
+            display: block !important;
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .view-option {
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--divider-color);
+        }
+        
+        .view-option:last-child {
+            border-bottom: none;
+        }
+        
+        .view-option:hover {
+            background-color: var(--bg-gray);
+        }
+        
+        .view-option span:first-child {
+            font-size: 24px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .view-option span:last-child {
+            font-weight: 500;
+            font-size: 16px;
+        }
+        
+        /* 底部导航栏 */
+        .bottom-nav {
+            height: 60px;
+            background-color: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            text-decoration: none;
+            font-size: 12px;
+            flex: 1;
+            padding: 8px 0;
+        }
+        
+        .bottom-nav-item.active {
+            color: #1890ff;
+        }
+        
+        .bottom-nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <div class="navbar">
+            <div class="navbar-title">知识树</div>
+            <div class="navbar-actions">
+                <button class="btn btn-sm btn-outline" id="viewSwitchBtn">
+                    <span>视图切换</span>
+                    <span style="margin-left: 5px; display: inline-block;">▼</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 视图切换菜单 -->
+        <div class="view-switch-menu show" id="viewSwitchMenu">
+            <div class="view-option" data-view="map">
+                <span>🌍</span>
+                <span>知识地图</span>
+            </div>
+            <div class="view-option" data-view="tree">
+                <span>🌳</span>
+                <span>知识树</span>
+            </div>
+            <div class="view-option" data-view="globe">
+                <span>🔮</span>
+                <span>知识球</span>
+            </div>
+        </div>
+        
+        <div class="search-bar">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="currentColor"/>
+            </svg>
+            <input type="text" class="search-input" placeholder="搜索知识点...">
+        </div>
+        
+        <div class="filter-chips">
+            <div class="filter-chip active">全部</div>
+            <div class="filter-chip">前端开发</div>
+            <div class="filter-chip">后端技术</div>
+            <div class="filter-chip">数据科学</div>
+            <div class="filter-chip">设计理论</div>
+            <div class="filter-chip">产品管理</div>
+            <div class="filter-chip">人工智能</div>
+        </div>
+        
+        <div class="knowledge-tree-container">
+            <svg id="knowledge-tree"></svg>
+        </div>
+        
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoom-in">+</button>
+            <button class="zoom-btn" id="zoom-out">-</button>
+            <button class="zoom-btn" id="zoom-reset">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 5V1L7 6L12 11V7C15.31 7 18 9.69 18 13C18 16.31 15.31 19 12 19C8.69 19 6 16.31 6 13H4C4 17.42 7.58 21 12 21C16.42 21 20 17.42 20 13C20 8.58 16.42 5 12 5Z" fill="currentColor"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="node-details">
+            <div class="node-details-header">
+                <h2 class="node-details-title">JavaScript 基础</h2>
+                <button class="node-details-close">×</button>
+            </div>
+            <div class="node-details-category">前端开发</div>
+            <p class="node-details-description">JavaScript 是一种具有函数优先的轻量级，解释型或即时编译型的编程语言。虽然它是作为开发 Web 页面的脚本语言而出名，但是它也被用到了很多非浏览器环境中。</p>
+            <div class="node-details-progress">
+                <div class="progress-label">
+                    <span>学习进度</span>
+                    <span>75%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-value"></div>
+                </div>
+            </div>
+            <div class="node-details-related">相关知识点</div>
+            <div class="related-nodes">
+                <div class="related-node">变量与数据类型</div>
+                <div class="related-node">函数与作用域</div>
+                <div class="related-node">事件循环</div>
+                <div class="related-node">DOM 操作</div>
+                <div class="related-node">ES6+特性</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // 知识树数据
+        const treeData = {
+            name: "我的知识体系",
+            category: "核心",
+            children: [
+                {
+                    name: "前端开发",
+                    category: "技术",
+                    progress: 80,
+                    description: "前端开发是创建网站或应用的Web界面呈现给用户的过程。前端开发人员通过HTML、CSS和JavaScript以及诸如React等框架创建用户界面和交互效果。",
+                    children: [
+                        {
+                            name: "HTML5",
+                            category: "前端开发",
+                            progress: 90,
+                            description: "HTML5是HTML的最新版本，提供了更多的多媒体元素，如<video>、<audio>和Canvas，并支持响应式Web设计。",
+                            relatedNodes: ["CSS3", "Web API", "语义化标签", "WebComponents"]
+                        },
+                        {
+                            name: "CSS3",
+                            category: "前端开发",
+                            progress: 85,
+                            description: "CSS3是CSS的最新标准，添加了许多新特性，如动画、过渡、变换和弹性盒子布局等，使网页设计更加灵活和动态。",
+                            relatedNodes: ["HTML5", "响应式设计", "Sass/Less", "动画"]
+                        },
+                        {
+                            name: "JavaScript",
+                            category: "前端开发",
+                            progress: 75,
+                            description: "JavaScript是一种具有函数优先的轻量级，解释型或即时编译型的编程语言。虽然它是作为开发Web页面的脚本语言而出名，但是它也被用到了很多非浏览器环境中。",
+                            children: [
+                                {
+                                    name: "ES6+",
+                                    category: "前端开发",
+                                    progress: 70,
+                                    description: "ES6（ECMAScript 2015）及更高版本引入了很多新特性，如箭头函数、类、模块、模板字符串、解构赋值等，使JavaScript更加强大和易用。",
+                                    relatedNodes: ["Babel", "TypeScript", "模块化", "异步编程"]
+                                },
+                                {
+                                    name: "DOM操作",
+                                    category: "前端开发",
+                                    progress: 85,
+                                    description: "DOM（文档对象模型）是HTML和XML文档的编程接口。DOM操作允许JavaScript访问和修改文档的内容、结构和样式。",
+                                    relatedNodes: ["事件处理", "BOM", "jQuery", "操作API"]
+                                },
+                                {
+                                    name: "异步编程",
+                                    category: "前端开发",
+                                    progress: 65,
+                                    description: "异步编程是处理非阻塞操作的编程范式。在JavaScript中，异步编程通常使用回调函数、Promise、async/await等技术实现。",
+                                    relatedNodes: ["Promise", "async/await", "事件循环", "回调函数"]
+                                }
+                            ]
+                        },
+                        {
+                            name: "React",
+                            category: "前端开发",
+                            progress: 80,
+                            description: "React是一个用于构建用户界面的JavaScript库。它采用组件化和声明式编程，使前端开发更加模块化和可维护。",
+                            children: [
+                                {
+                                    name: "Hooks",
+                                    category: "前端开发",
+                                    progress: 75,
+                                    description: "Hooks是React 16.8中新增的特性，它可以让你在不编写类的情况下使用state以及其他的React特性。",
+                                    relatedNodes: ["useState", "useEffect", "useContext", "自定义Hooks"]
+                                },
+                                {
+                                    name: "Redux",
+                                    category: "前端开发",
+                                    progress: 70,
+                                    description: "Redux是JavaScript应用的状态容器，提供可预测的状态管理。它通常与React一起使用，但也可以与任何其他视图库一起使用。",
+                                    relatedNodes: ["状态管理", "中间件", "Action", "Reducer"]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "后端技术",
+                    category: "技术",
+                    progress: 65,
+                    description: "后端开发是构建应用程序服务器端逻辑的过程，包括数据库设计、API开发、业务逻辑实现等。后端技术包括诸如Node.js、Java、Python等语言和相关框架。",
+                    children: [
+                        {
+                            name: "Node.js",
+                            category: "后端技术",
+                            progress: 75,
+                            description: "Node.js是一个基于Chrome V8引擎的JavaScript运行时环境，使开发者能够使用JavaScript构建服务器端应用程序。",
+                            children: [
+                                {
+                                    name: "Express",
+                                    category: "后端技术",
+                                    progress: 80,
+                                    description: "Express是一个简洁灵活的Node.js Web应用程序框架，提供了一系列强大的功能，用于创建各种Web和移动设备应用。",
+                                    relatedNodes: ["中间件", "路由", "REST API", "模板引擎"]
+                                }
+                            ]
+                        },
+                        {
+                            name: "数据库",
+                            category: "后端技术",
+                            progress: 60,
+                            description: "数据库是结构化信息或数据的有组织的集合，通常以电子形式存储在计算机系统中。数据库通常由数据库管理系统(DBMS)控制。",
+                            children: [
+                                {
+                                    name: "SQL",
+                                    category: "后端技术",
+                                    progress: 65,
+                                    description: "SQL（结构化查询语言）是用于管理关系数据库管理系统的标准语言。它用于存储、操作和检索数据库中的数据。",
+                                    relatedNodes: ["MySQL", "PostgreSQL", "关系型数据库", "查询优化"]
+                                },
+                                {
+                                    name: "MongoDB",
+                                    category: "后端技术",
+                                    progress: 55,
+                                    description: "MongoDB是一个跨平台的面向文档的数据库程序。它是一种NoSQL数据库，使用类似JSON的BSON文档存储数据。",
+                                    relatedNodes: ["NoSQL", "文档数据库", "聚合查询", "数据模型"]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "设计理论",
+                    category: "设计",
+                    progress: 70,
+                    description: "设计理论是关于如何创建有效和吸引人的视觉传达的原则和规则的集合。它包括色彩理论、排版学、布局原则等方面的知识。",
+                    children: [
+                        {
+                            name: "UI设计",
+                            category: "设计",
+                            progress: 75,
+                            description: "UI（用户界面）设计是创建用户与设备或应用程序交互的界面的过程。好的UI设计使交互变得简单、直观和愉快。",
+                            children: [
+                                {
+                                    name: "色彩理论",
+                                    category: "设计",
+                                    progress: 80,
+                                    description: "色彩理论是研究颜色的混合及其在视觉设计中的应用的学科。它包括色轮、色彩和谐、色彩心理学等概念。",
+                                    relatedNodes: ["色彩心理学", "配色方案", "品牌色", "色彩可访问性"]
+                                },
+                                {
+                                    name: "排版",
+                                    category: "设计",
+                                    progress: 70,
+                                    description: "排版是选择和安排字体、行间距、字母间距等以使书面语言可读、可理解和吸引人的艺术。",
+                                    relatedNodes: ["字体选择", "文本层次结构", "可读性", "网格系统"]
+                                }
+                            ]
+                        },
+                        {
+                            name: "UX设计",
+                            category: "设计",
+                            progress: 65,
+                            description: "UX（用户体验）设计是提高用户对产品或服务的满意度的过程，通过改善可用性、易用性和与产品互动的愉悦程度来实现。",
+                            children: [
+                                {
+                                    name: "用户研究",
+                                    category: "设计",
+                                    progress: 60,
+                                    description: "用户研究是通过各种方法收集关于用户需求、行为和动机的信息，以创建更符合用户需求的产品或服务。",
+                                    relatedNodes: ["用户访谈", "调查问卷", "用户画像", "可用性测试"]
+                                },
+                                {
+                                    name: "交互设计",
+                                    category: "设计",
+                                    progress: 70,
+                                    description: "交互设计是创建用户与产品或服务之间的互动的过程。它关注如何使交互变得直观、高效和愉快。",
+                                    relatedNodes: ["信息架构", "原型设计", "导航设计", "反馈设计"]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // 初始化知识树可视化
+        function initKnowledgeTree() {
+            const width = window.innerWidth;
+            const height = window.innerHeight - 170;
+            
+            // 清空SVG
+            d3.select("#knowledge-tree").selectAll("*").remove();
+            
+            // 创建具有固定ID的容器组
+            d3.select("#knowledge-tree")
+                .attr("width", width)
+                .attr("height", height);
+            
+            // 创建可缩放的视图容器
+            const svg = d3.select("#knowledge-tree")
+                .append("g")
+                .attr("id", "knowledge-tree-container")
+                .attr("transform", `translate(${width / 2},${height / 2})`);
+            
+            // 创建树形布局
+            const tree = d3.tree()
+                .size([2 * Math.PI, Math.min(width, height) / 2 - 100])
+                .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+            
+            // 创建根节点
+            const root = d3.hierarchy(treeData);
+            
+            // 计算节点和连接线的位置
+            const treeLayout = tree(root);
+            
+            // 定义显示逻辑辅助函数
+            function shouldShowNode(d, scale) {
+                // 根节点、一级节点和二级节点始终显示
+                if (d.depth <= 2) return true;
+                // 三级节点只在放大时显示
+                if (d.depth === 3 && scale >= 1.3) return true;
+                // 更深层级只在进一步放大时显示
+                if (d.depth > 3 && scale >= 1.8) return true;
+                return false;
+            }
+            
+            // 添加所有连接线（包括隐藏的）
+            const allLinks = svg.selectAll(".link")
+                .data(root.links())
+                .enter()
+                .append("path")
+                .attr("class", d => `link ${shouldShowNode(d.target, 1) ? "visible" : "hidden"}`)
+                .attr("d", d3.linkRadial()
+                    .angle(d => d.x)
+                    .radius(d => d.y))
+                .style("opacity", d => shouldShowNode(d.target, 1) ? 1 : 0);
+            
+            // 添加节点组
+            const node = svg.selectAll(".node")
+                .data(root.descendants())
+                .enter()
+                .append("g")
+                .attr("class", d => `node ${d.data.name === "JavaScript" ? "highlight" : ""} ${shouldShowNode(d, 1) ? "visible" : "hidden"}`)
+                .attr("transform", d => {
+                    const [x, y] = radialPoint(d.x, d.y);
+                    return `translate(${x},${y})`;
+                })
+                .style("opacity", d => shouldShowNode(d, 1) ? 1 : 0)
+                .on("click", handleNodeClick);
+            
+            // 添加节点圆形
+            node.append("circle")
+                .attr("r", d => d.depth === 0 ? 12 : d.children ? 8 : 6)
+                .style("fill", d => getColorByCategory(d.data.category));
+            
+            // 创建单独的文本元素组
+            const nodeTexts = svg.selectAll(".node-text")
+                .data(root.descendants())
+                .enter()
+                .append("text")
+                .attr("class", d => `node-text ${shouldShowNode(d, 1) ? "visible" : "hidden"}`)
+                .attr("dy", "0.35em")
+                .attr("text-anchor", "middle")
+                .text(d => d.data.name)
+                .style("fill", "#333")
+                .style("font-size", d => d.depth === 0 ? "16px" : "12px")
+                .style("font-weight", d => d.depth <= 1 ? "bold" : "normal")
+                .style("opacity", d => shouldShowNode(d, 1) ? 1 : 0)
+                .attr("transform", function(d) {
+                    const angle = d.x - Math.PI/2;
+                    // 为不同层级节点调整文本偏移量
+                    let offset;
+                    if (d.depth === 0) offset = 0;      // 根节点
+                    else if (d.depth === 1) offset = 25; // 第一层节点
+                    else if (d.depth === 2) offset = 35; // 第二层节点
+                    else offset = 40;                    // 更外层节点
+                    
+                    // 计算节点外围的位置
+                    const textRadius = d.y + offset;
+                    const x = textRadius * Math.cos(angle);
+                    const y = textRadius * Math.sin(angle);
+                    
+                    return `translate(${x},${y})`;
+                });
+            
+            // 缩放功能
+            let currentScale = 1;
+            
+            // 更新节点显示状态的函数
+            function updateNodeVisibility(scale) {
+                // 更新节点可见性
+                node.style("opacity", d => shouldShowNode(d, scale) ? 1 : 0)
+                    .classed("visible", d => shouldShowNode(d, scale))
+                    .classed("hidden", d => !shouldShowNode(d, scale));
+                
+                // 更新文本可见性
+                nodeTexts.style("opacity", d => shouldShowNode(d, scale) ? 1 : 0)
+                    .classed("visible", d => shouldShowNode(d, scale))
+                    .classed("hidden", d => !shouldShowNode(d, scale));
+                
+                // 更新连接线可见性
+                allLinks.style("opacity", d => shouldShowNode(d.target, scale) ? 1 : 0)
+                    .classed("visible", d => shouldShowNode(d.target, scale))
+                    .classed("hidden", d => !shouldShowNode(d.target, scale));
+            }
+            
+            // 创建缩放行为
+            const zoom = d3.zoom()
+                .scaleExtent([0.5, 3])
+                .on("zoom", (event) => {
+                    // 只改变缩放比例，保持中心点不变
+                    d3.select("#knowledge-tree-container")
+                        .attr("transform", `translate(${width/2}, ${height/2}) scale(${event.transform.k})`);
+                    
+                    currentScale = event.transform.k;
+                    
+                    // 根据缩放比例更新节点显示
+                    updateNodeVisibility(currentScale);
+                });
+            
+            // 应用缩放行为到SVG
+            d3.select("#knowledge-tree").call(zoom);
+            
+            // 缩放按钮事件
+            d3.select("#zoom-in").on("click", () => {
+                currentScale = Math.min(currentScale + 0.2, 3);
+                
+                // 设置变换，保持中心点
+                d3.select("#knowledge-tree").transition()
+                    .duration(300)
+                    .call(zoom.transform, d3.zoomIdentity.scale(currentScale));
+            });
+            
+            d3.select("#zoom-out").on("click", () => {
+                currentScale = Math.max(currentScale - 0.2, 0.5);
+                
+                // 设置变换，保持中心点
+                d3.select("#knowledge-tree").transition()
+                    .duration(300)
+                    .call(zoom.transform, d3.zoomIdentity.scale(currentScale));
+            });
+            
+            d3.select("#zoom-reset").on("click", () => {
+                currentScale = 1;
+                
+                // 重置变换
+                d3.select("#knowledge-tree").transition()
+                    .duration(300)
+                    .call(zoom.transform, d3.zoomIdentity);
+            });
+            
+            // 节点点击事件
+            function handleNodeClick(event, d) {
+                const details = document.querySelector(".node-details");
+                const title = document.querySelector(".node-details-title");
+                const category = document.querySelector(".node-details-category");
+                const description = document.querySelector(".node-details-description");
+                const progressValue = document.querySelector(".progress-value");
+                const progressText = document.querySelector(".progress-label span:last-child");
+                const relatedNodes = document.querySelector(".related-nodes");
+                
+                // 更新节点详情
+                title.textContent = d.data.name;
+                category.textContent = d.data.category;
+                description.textContent = d.data.description || "暂无描述";
+                
+                if (d.data.progress) {
+                    progressValue.style.width = d.data.progress + "%";
+                    progressText.textContent = d.data.progress + "%";
+                } else {
+                    progressValue.style.width = "0%";
+                    progressText.textContent = "0%";
+                }
+                
+                // 更新相关节点
+                relatedNodes.innerHTML = "";
+                if (d.data.relatedNodes) {
+                    d.data.relatedNodes.forEach(node => {
+                        const div = document.createElement("div");
+                        div.className = "related-node";
+                        div.textContent = node;
+                        relatedNodes.appendChild(div);
+                    });
+                } else {
+                    const div = document.createElement("div");
+                    div.className = "related-node";
+                    div.textContent = "暂无相关知识点";
+                    relatedNodes.appendChild(div);
+                }
+                
+                // 显示节点详情
+                details.classList.add("show");
+            }
+            
+            // 关闭节点详情
+            document.querySelector(".node-details-close").addEventListener("click", () => {
+                document.querySelector(".node-details").classList.remove("show");
+            });
+            
+            // 筛选事件
+            document.querySelectorAll(".filter-chip").forEach(chip => {
+                chip.addEventListener("click", function() {
+                    document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+                    this.classList.add("active");
+                    
+                    const category = this.textContent;
+                    if (category === "全部") {
+                        // 恢复正常显示状态
+                        updateNodeVisibility(currentScale);
+                    } else {
+                        // 在当前显示的节点中进行筛选
+                        node.style("opacity", d => 
+                            shouldShowNode(d, currentScale) ? 
+                                (d.data.category === category ? 1 : 0.3) : 0
+                        );
+                        
+                        nodeTexts.style("opacity", d => 
+                            shouldShowNode(d, currentScale) ? 
+                                (d.data.category === category ? 1 : 0.3) : 0
+                        );
+                        
+                        allLinks.style("opacity", d => 
+                            shouldShowNode(d.target, currentScale) ? 
+                                (d.target.data.category === category ? 1 : 0.3) : 0
+                        );
+                    }
+                });
+            });
+        }
+        
+        // 辅助函数 - 极坐标转笛卡尔坐标
+        function radialPoint(x, y) {
+            return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
+        }
+        
+        // 根据类别获取颜色
+        function getColorByCategory(category) {
+            const colorMap = {
+                "核心": "#1890ff",
+                "技术": "#52c41a",
+                "设计": "#722ed1",
+                "前端开发": "#fa8c16",
+                "后端技术": "#13c2c2",
+                "产品管理": "#eb2f96"
+            };
+            
+            return colorMap[category] || "#1890ff";
+        }
+        
+        // 初始化知识树
+        document.addEventListener("DOMContentLoaded", initKnowledgeTree);
+        
+        // 窗口大小变化时重新绘制
+        window.addEventListener("resize", initKnowledgeTree);
+        
+        // 视图切换功能
+        const viewSwitchBtn = document.getElementById('viewSwitchBtn');
+        const viewSwitchMenu = document.getElementById('viewSwitchMenu');
+        
+        if (viewSwitchBtn && viewSwitchMenu) {
+            // 视图切换按钮点击事件
+            viewSwitchBtn.addEventListener('click', () => {
+                viewSwitchMenu.classList.toggle('show');
+                // 切换按钮上的箭头方向
+                const arrow = viewSwitchBtn.querySelector('span:last-child');
+                arrow.textContent = viewSwitchMenu.classList.contains('show') ? '▲' : '▼';
+            });
+    
+            // 点击其他地方关闭菜单 (恢复此功能)
+            document.addEventListener('click', (e) => {
+                if (!viewSwitchBtn.contains(e.target) && !viewSwitchMenu.contains(e.target)) {
+                    viewSwitchMenu.classList.remove('show');
+                    const arrow = viewSwitchBtn.querySelector('span:last-child');
+                    arrow.textContent = '▼'; // 菜单关闭时箭头向下
+                }
+            });
+    
+            // 处理视图切换
+            document.querySelectorAll('.view-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const view = option.dataset.view;
+                    
+                    if (view === 'map') {
+                        window.location.href = 'knowledge-map.html';
+                    } else if (view === 'globe') {
+                        window.location.href = 'knowledge-globe.html';
+                    }
+                    // 如果是 tree，则不跳转
+                    viewSwitchMenu.classList.remove('show');
+                });
+            });
+        }
+    </script>
+    
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <a href="knowledge-map.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">🌍</div>
+            <div>知识地图</div>
+        </a>
+        <a href="knowledge-tree.html" class="bottom-nav-item active">
+            <div class="bottom-nav-icon">🌳</div>
+            <div>知识树</div>
+        </a>
+        <a href="knowledge-globe.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">🔮</div>
+            <div>知识球</div>
+        </a>
+        <a href="review.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">📝</div>
+            <div>复习</div>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👤</div>
+            <div>我的</div>
+        </a>
+    </div>
+</body>
+</html> 

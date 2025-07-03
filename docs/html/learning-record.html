@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习记录 - 快乐学习</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-gray);
+        }
+        
+        .record-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 80px; /* 为底部导航栏留出空间 */
+        }
+        
+        .record-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 24px 16px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
+            animation: fadeInDown 0.5s ease-out;
+        }
+        
+        .header-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+        }
+        
+        .record-summary {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+        }
+        
+        .summary-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .summary-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .summary-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        
+        /* 日期选择器 */
+        .date-selector {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .date-display {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .date-arrow {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+        }
+        
+        .view-switch {
+            display: flex;
+            background-color: white;
+            border-radius: 20px;
+            padding: 3px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .view-option {
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--text-medium);
+        }
+        
+        .view-option.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* 学习日历热力图 */
+        .calendar-heatmap {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        
+        .heatmap-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .heatmap-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        
+        .day-label {
+            font-size: 12px;
+            color: var(--text-light);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .day-cell {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 4px;
+            background-color: #ebedf0;
+            transition: transform 0.2s ease;
+        }
+        
+        .day-cell:hover {
+            transform: scale(1.1);
+        }
+        
+        .intensity-0 { background-color: #ebedf0; }
+        .intensity-1 { background-color: #c6e48b; }
+        .intensity-2 { background-color: #7bc96f; }
+        .intensity-3 { background-color: #239a3b; }
+        .intensity-4 { background-color: #196127; }
+        
+        .heatmap-legend {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-medium);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-left: 8px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 4px;
+        }
+        
+        /* 数据图表 */
+        .chart-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .chart-container {
+            height: 200px;
+            position: relative;
+        }
+
+        /* 学习活动时间线 */
+        .timeline {
+            margin-bottom: 16px;
+        }
+        
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .timeline-item {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            border-left: 4px solid var(--primary-color);
+            animation: fadeIn 0.5s ease-out;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .timeline-item:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -12px;
+            top: 16px;
+            width: 20px;
+            height: 20px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: var(--shadow-sm);
+            z-index: 1;
+        }
+        
+        .timeline-item.knowledge {
+            border-left-color: var(--map-color);
+        }
+        
+        .timeline-item.knowledge::before {
+            background-color: var(--map-color);
+        }
+        
+        .timeline-item.review {
+            border-left-color: var(--tree-color);
+        }
+        
+        .timeline-item.review::before {
+            background-color: var(--tree-color);
+        }
+        
+        .timeline-item.quiz {
+            border-left-color: var(--globe-color);
+        }
+        
+        .timeline-item.quiz::before {
+            background-color: var(--globe-color);
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .timeline-title {
+            font-weight: 600;
+        }
+        
+        .timeline-time {
+            font-size: 12px;
+            color: var(--text-medium);
+        }
+        
+        .timeline-content {
+            font-size: 14px;
+            color: var(--text-dark);
+            line-height: 1.5;
+        }
+        
+        .timeline-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-size: 12px;
+        }
+        
+        .timeline-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background-color: rgba(30, 136, 229, 0.1);
+            color: var(--primary-color);
+            border-radius: 12px;
+        }
+        
+        .timeline-value {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            text-align: center;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            color: var(--text-light);
+            margin-bottom: 16px;
+        }
+        
+        .empty-text {
+            color: var(--text-medium);
+        }
+        
+        /* 标签过滤器 */
+        .tag-filters {
+            display: flex;
+            overflow-x: auto;
+            padding: 8px 0;
+            margin-bottom: 16px;
+            gap: 8px;
+        }
+        
+        .tag-filter {
+            padding: 6px 12px;
+            background-color: white;
+            border-radius: 16px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+            color: var(--text-medium);
+        }
+        
+        .tag-filter.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+        <div class="navbar-title">学习记录</div>
+        <div class="navbar-actions">
+            <button class="btn btn-sm btn-outline">添加记录</button>
+        </div>
+    </div>
+    
+    <!-- 学习记录内容 -->
+    <div class="record-container">
+        <!-- 顶部统计卡片 -->
+        <div class="record-header">
+            <div class="header-bg"></div>
+            <div class="record-summary">
+                <h2>学习数据统计</h2>
+                <div class="summary-row">
+                    <div class="summary-item">
+                        <div class="summary-value">32</div>
+                        <div class="summary-label">本周学时</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value">85%</div>
+                        <div class="summary-label">目标完成</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value">12</div>
+                        <div class="summary-label">知识点掌握</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 日期选择器 -->
+        <div class="date-selector">
+            <div class="date-arrow">←</div>
+            <div class="date-display">2023年5月</div>
+            <div class="date-arrow">→</div>
+        </div>
+        
+        <!-- 视图切换 -->
+        <div class="view-switch">
+            <div class="view-option active">日</div>
+            <div class="view-option">周</div>
+            <div class="view-option">月</div>
+        </div>
+        
+        <!-- 学习日历热力图 -->
+        <div class="calendar-heatmap">
+            <div class="heatmap-title">
+                <span>学习活跃度</span>
+            </div>
+            <div class="heatmap-days">
+                <!-- 星期标签 -->
+                <div class="day-label">一</div>
+                <div class="day-label">二</div>
+                <div class="day-label">三</div>
+                <div class="day-label">四</div>
+                <div class="day-label">五</div>
+                <div class="day-label">六</div>
+                <div class="day-label">日</div>
+                
+                <!-- 日历格子 - 5x7网格示例 -->
+                <div class="day-cell intensity-1"></div>
+                <div class="day-cell intensity-3"></div>
+                <div class="day-cell intensity-2"></div>
+                <div class="day-cell intensity-0"></div>
+                <div class="day-cell intensity-1"></div>
+                <div class="day-cell intensity-4"></div>
+                <div class="day-cell intensity-2"></div>
+                
+                <div class="day-cell intensity-0"></div>
+                <div class="day-cell intensity-1"></div>
+                <div class="day-cell intensity-3"></div>
+                <div class="day-cell intensity-2"></div>
+                <div class="day-cell intensity-1"></div>
+                <div class="day-cell intensity-0"></div>
+                <div class="day-cell intensity-2"></div>
+                
+                <div class="day-cell intensity-2"></div>
+                <div class="day-cell intensity-3"></div>
+                <div class="day-cell intensity-4"></div>
+                <div class="day-cell intensity-3"></div>
+                <div class="day-cell intensity-2"></div>
+                <div class="day-cell intensity-1"></div>
+                <div class="day-cell intensity-0"></div>
+                
+                <div class="day-cell intensity-1"></div>
+                <div class="day-cell intensity-2"></div>
+                <div class="day-cell intensity-3"></div>
+                <div class="day-cell intensity-2"></div>
+                <div class="day-cell intensity-1"></div>
+                <div class="day-cell intensity-0"></div>
+                <div class="day-cell intensity-1"></div>
+                
+                <div class="day-cell intensity-0"></div>
+                <div class="day-cell intensity-1"></div>
+                <div class="day-cell intensity-2"></div>
+                <div class="day-cell intensity-3"></div>
+                <div class="day-cell intensity-4"></div>
+                <div class="day-cell intensity-3"></div>
+                <div class="day-cell intensity-2"></div>
+            </div>
+            <div class="heatmap-legend">
+                <div>贡献度：</div>
+                <div class="legend-item">
+                    <div class="legend-color intensity-0"></div>
+                    <span>无</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color intensity-1"></div>
+                    <span>低</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color intensity-2"></div>
+                    <span>中</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color intensity-3"></div>
+                    <span>高</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color intensity-4"></div>
+                    <span>超高</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 智慧值/成长值趋势图 -->
+        <div class="chart-card">
+            <div class="chart-title">智慧值/成长值趋势</div>
+            <div class="chart-container" id="trendsChart">
+                <!-- 图表将通过JavaScript渲染 -->
+            </div>
+        </div>
+        
+        <!-- 标签过滤器 -->
+        <div class="tag-filters">
+            <div class="tag-filter active">全部</div>
+            <div class="tag-filter">学习</div>
+            <div class="tag-filter">复习</div>
+            <div class="tag-filter">测验</div>
+            <div class="tag-filter">笔记</div>
+            <div class="tag-filter">目标</div>
+        </div>
+        
+        <!-- 学习活动时间线 -->
+        <div class="timeline">
+            <div class="timeline-title">
+                <span>今日活动</span>
+            </div>
+            
+            <!-- 时间线项目 -->
+            <div class="timeline-item knowledge">
+                <div class="timeline-header">
+                    <div class="timeline-title">学习新知识点</div>
+                    <div class="timeline-time">10:30 AM</div>
+                </div>
+                <div class="timeline-content">学习了"二分查找算法"的基本原理和实现方法。</div>
+                <div class="timeline-footer">
+                    <div class="timeline-tag">算法 • 数据结构</div>
+                    <div class="timeline-value">+15 智慧值</div>
+                </div>
+            </div>
+            
+            <div class="timeline-item quiz">
+                <div class="timeline-header">
+                    <div class="timeline-title">完成了挑战测验</div>
+                    <div class="timeline-time">2:45 PM</div>
+                </div>
+                <div class="timeline-content">在"算法思维"测验中获得了90分，正确回答了9道题目中的8道。</div>
+                <div class="timeline-footer">
+                    <div class="timeline-tag">算法 • 测验</div>
+                    <div class="timeline-value">+8 智慧值</div>
+                </div>
+            </div>
+            
+            <div class="timeline-item review">
+                <div class="timeline-header">
+                    <div class="timeline-title">知识点复习</div>
+                    <div class="timeline-time">4:15 PM</div>
+                </div>
+                <div class="timeline-content">复习了"HTTP状态码"，巩固了之前的学习内容。</div>
+                <div class="timeline-footer">
+                    <div class="timeline-tag">Web开发 • 网络协议</div>
+                    <div class="timeline-value">恢复12 智慧值</div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-header">
+                    <div class="timeline-title">记录学习笔记</div>
+                    <div class="timeline-time">6:20 PM</div>
+                </div>
+                <div class="timeline-content">整理了"设计模式 - 观察者模式"的学习笔记，记录了核心概念和实现方法。</div>
+                <div class="timeline-footer">
+                    <div class="timeline-tag">软件设计 • 设计模式</div>
+                    <div class="timeline-value">+5 成长值</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 更多日期的时间线（可折叠） -->
+        <div class="timeline">
+            <div class="timeline-title">
+                <span>昨天</span>
+            </div>
+            
+            <div class="timeline-item review">
+                <div class="timeline-header">
+                    <div class="timeline-title">知识点复习</div>
+                    <div class="timeline-time">9:30 AM</div>
+                </div>
+                <div class="timeline-content">复习了"数据库索引原理"，加深了对B树和B+树的理解。</div>
+                <div class="timeline-footer">
+                    <div class="timeline-tag">数据库 • MySQL</div>
+                    <div class="timeline-value">恢复18 智慧值</div>
+                </div>
+            </div>
+            
+            <div class="timeline-item knowledge">
+                <div class="timeline-header">
+                    <div class="timeline-title">学习新知识点</div>
+                    <div class="timeline-time">3:40 PM</div>
+                </div>
+                <div class="timeline-content">学习了"React Hooks基础"，包括useState和useEffect的使用方法。</div>
+                <div class="timeline-footer">
+                    <div class="timeline-tag">前端开发 • React</div>
+                    <div class="timeline-value">+20 智慧值</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <a href="knowledge-map.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">🌍</div>
+            <div>知识地图</div>
+        </a>
+        <a href="review.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">📝</div>
+            <div>复习</div>
+        </a>
+        <a href="community.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👥</div>
+            <div>社区</div>
+        </a>
+        <a href="learning-record.html" class="bottom-nav-item active">
+            <div class="bottom-nav-icon">📊</div>
+            <div>记录</div>
+        </a>
+    </div>
+    
+    <script>
+        // 绘制趋势图
+        document.addEventListener('DOMContentLoaded', function() {
+            drawTrendChart();
+            setupDayCells();
+            setupTagFilters();
+        });
+        
+        function drawTrendChart() {
+            const canvas = document.createElement('canvas');
+            canvas.width = document.getElementById('trendsChart').offsetWidth;
+            canvas.height = document.getElementById('trendsChart').offsetHeight;
+            document.getElementById('trendsChart').appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            
+            // 绘制坐标轴
+            ctx.beginPath();
+            ctx.strokeStyle = '#E0E0E0';
+            ctx.moveTo(40, 20);
+            ctx.lineTo(40, canvas.height - 30);
+            ctx.lineTo(canvas.width - 20, canvas.height - 30);
+            ctx.stroke();
+            
+            // 绘制智慧值曲线数据
+            const wisdomData = [60, 58, 65, 70, 68, 75, 85];
+            const growthData = [20, 25, 28, 30, 35, 38, 45];
+            
+            // 计算图表比例
+            const xStep = (canvas.width - 60) / 6;
+            const maxValue = 100;
+            const yScale = (canvas.height - 50) / maxValue;
+            
+            // 绘制智慧值曲线
+            ctx.beginPath();
+            ctx.strokeStyle = '#1E88E5';
+            ctx.lineWidth = 3;
+            
+            for (let i = 0; i < wisdomData.length; i++) {
+                const x = 40 + i * xStep;
+                const y = canvas.height - 30 - wisdomData[i] * yScale;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // 绘制智慧值点
+            for (let i = 0; i < wisdomData.length; i++) {
+                const x = 40 + i * xStep;
+                const y = canvas.height - 30 - wisdomData[i] * yScale;
+                
+                ctx.beginPath();
+                ctx.fillStyle = '#1E88E5';
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 绘制成长值曲线
+            ctx.beginPath();
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 3;
+            
+            for (let i = 0; i < growthData.length; i++) {
+                const x = 40 + i * xStep;
+                const y = canvas.height - 30 - growthData[i] * yScale;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // 绘制成长值点
+            for (let i = 0; i < growthData.length; i++) {
+                const x = 40 + i * xStep;
+                const y = canvas.height - 30 - growthData[i] * yScale;
+                
+                ctx.beginPath();
+                ctx.fillStyle = '#4CAF50';
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 绘制图例
+            ctx.fillStyle = '#1E88E5';
+            ctx.fillRect(canvas.width - 120, 15, 14, 8);
+            ctx.fillStyle = '#333333';
+            ctx.font = '12px sans-serif';
+            ctx.fillText('智慧值', canvas.width - 100, 20);
+            
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(canvas.width - 120, 35, 14, 8);
+            ctx.fillStyle = '#333333';
+            ctx.fillText('成长值', canvas.width - 100, 40);
+            
+            // 绘制X轴标签
+            const days = ['一', '二', '三', '四', '五', '六', '日'];
+            for (let i = 0; i < 7; i++) {
+                const x = 40 + i * xStep;
+                ctx.fillStyle = '#666666';
+                ctx.font = '10px sans-serif';
+                ctx.fillText(days[i], x - 4, canvas.height - 10);
+            }
+        }
+        
+        function setupDayCells() {
+            const dayCells = document.querySelectorAll('.day-cell');
+            dayCells.forEach(cell => {
+                cell.addEventListener('click', function() {
+                    alert('显示该日详细学习记录');
+                });
+            });
+        }
+        
+        function setupTagFilters() {
+            const filters = document.querySelectorAll('.tag-filter');
+            filters.forEach(filter => {
+                filter.addEventListener('click', function() {
+                    filters.forEach(f => f.classList.remove('active'));
+                    this.classList.add('active');
+                    // 这里应该添加过滤逻辑，但现在只是UI演示
+                });
+            });
+        }
+        
+        // 模拟视图切换功能
+        const viewOptions = document.querySelectorAll('.view-option');
+        viewOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                viewOptions.forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                // 这里应该有实际的视图切换逻辑
+            });
+        });
+        
+        // 模拟日期切换功能
+        const dateArrows = document.querySelectorAll('.date-arrow');
+        dateArrows.forEach(arrow => {
+            arrow.addEventListener('click', () => {
+                // 这里应该有实际的日期更换逻辑
+                alert('日期切换功能将在正式版中实现');
+            });
+        });
+        
+        // 为底部导航项添加点击效果
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        bottomNavItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                    alert('该功能正在开发中，敬请期待！');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

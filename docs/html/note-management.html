@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>笔记管理 - 快乐学习</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-gray);
+        }
+        
+        .note-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 80px; /* 为底部导航栏留出空间 */
+        }
+        
+        /* 搜索栏 */
+        .search-bar {
+            background-color: white;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background-color: var(--bg-gray);
+            font-size: 14px;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
+        }
+        
+        .search-icon {
+            margin-right: 8px;
+            color: var(--text-medium);
+            font-size: 18px;
+        }
+        
+        /* 视图切换 */
+        .view-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .view-toggle {
+            display: flex;
+            background-color: white;
+            border-radius: 8px;
+            padding: 2px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .view-option {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .view-option.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .sort-button {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            font-size: 14px;
+        }
+        
+        /* 分类标签侧边栏 */
+        .tag-sidebar {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .tag-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .tag-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .tag-toggle {
+            font-size: 14px;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+        
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .tag-item {
+            padding: 6px 12px;
+            background-color: var(--bg-gray);
+            border-radius: 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .tag-item:hover {
+            background-color: rgba(30, 136, 229, 0.1);
+        }
+        
+        .tag-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .tag-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .tag-count {
+            margin-left: 6px;
+            font-size: 12px;
+            color: var(--text-light);
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            padding: 1px 6px;
+        }
+        
+        /* 笔记网格 */
+        .note-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        /* 笔记列表 */
+        .note-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        /* 笔记卡片 - 网格视图 */
+        .note-card-grid {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.5s ease-out;
+            overflow: hidden;
+            height: 200px;
+        }
+        
+        .note-card-grid:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .note-card-grid::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: var(--primary-color);
+        }
+        
+        .note-type-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 12px;
+            background-color: rgba(30, 136, 229, 0.1);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .note-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .note-preview {
+            font-size: 13px;
+            color: var(--text-medium);
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            line-height: 1.5;
+        }
+        
+        .note-footer {
+            margin-top: auto;
+            font-size: 12px;
+            color: var(--text-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .note-meta {
+            display: flex;
+            align-items: center;
+        }
+        
+        .note-date {
+            margin-right: 12px;
+        }
+        
+        .note-tags {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .note-tag {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        /* 笔记卡片 - 列表视图 */
+        .note-card-list {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.5s ease-out;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .note-card-list:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .note-content-list {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .note-preview-list {
+            font-size: 14px;
+            color: var(--text-medium);
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        
+        .note-side {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            min-width: 70px;
+        }
+        
+        .note-date-list {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        
+        .note-type-badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            background-color: rgba(30, 136, 229, 0.1);
+            color: var(--primary-color);
+            font-size: 12px;
+        }
+        
+        /* 不同笔记类型的颜色 */
+        .note-text::before, .note-type-text {
+            background-color: var(--primary-color);
+        }
+        
+        .note-image::before, .note-type-image {
+            background-color: var(--map-color);
+        }
+        
+        .note-audio::before, .note-type-audio {
+            background-color: var(--globe-color);
+        }
+        
+        .note-mindmap::before, .note-type-mindmap {
+            background-color: var(--tree-color);
+        }
+        
+        /* 创建笔记浮动按钮 */
+        .create-note-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 20;
+        }
+        
+        .create-note-btn:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        /* 创建笔记菜单 */
+        .create-menu {
+            position: fixed;
+            bottom: 140px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 19;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .create-menu.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .create-option {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .create-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .create-option::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            right: calc(100% + 10px);
+            white-space: nowrap;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .create-option:hover::after {
+            opacity: 1;
+        }
+        
+        .create-text {
+            color: var(--primary-color);
+        }
+        
+        .create-image {
+            color: var(--map-color);
+        }
+        
+        .create-audio {
+            color: var(--globe-color);
+        }
+        
+        .create-mindmap {
+            color: var(--tree-color);
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            color: var(--primary-light);
+            margin-bottom: 16px;
+            opacity: 0.8;
+        }
+        
+        .empty-text {
+            font-size: 16px;
+            color: var(--text-medium);
+            max-width: 250px;
+            line-height: 1.5;
+        }
+        
+        .empty-action {
+            margin-top: 20px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+        <div class="navbar-title">笔记管理</div>
+        <div class="navbar-actions">
+            <button class="btn btn-sm btn-outline">导入</button>
+        </div>
+    </div>
+    
+    <!-- 笔记管理内容 -->
+    <div class="note-container">
+        <!-- 搜索栏 -->
+        <div class="search-bar">
+            <div class="search-icon">🔍</div>
+            <input type="text" class="search-input" placeholder="搜索笔记...">
+        </div>
+        
+        <!-- 视图控制栏 -->
+        <div class="view-control">
+            <div class="view-toggle">
+                <div class="view-option active" data-view="grid">网格</div>
+                <div class="view-option" data-view="list">列表</div>
+            </div>
+            <div class="sort-button">
+                <span>最近更新</span>
+                <span style="margin-left: 6px;">▼</span>
+            </div>
+        </div>
+        
+        <!-- 分类标签栏 -->
+        <div class="tag-sidebar">
+            <div class="tag-header">
+                <div class="tag-title">笔记标签</div>
+                <div class="tag-toggle">全部展开</div>
+            </div>
+            <div class="tag-list">
+                <div class="tag-item active">
+                    <span>全部</span>
+                    <span class="tag-count">24</span>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-color" style="background-color: #1E88E5;"></div>
+                    <span>编程</span>
+                    <span class="tag-count">8</span>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-color" style="background-color: #4CAF50;"></div>
+                    <span>数据库</span>
+                    <span class="tag-count">4</span>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-color" style="background-color: #FF9800;"></div>
+                    <span>设计模式</span>
+                    <span class="tag-count">5</span>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-color" style="background-color: #9C27B0;"></div>
+                    <span>算法</span>
+                    <span class="tag-count">7</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 笔记网格视图 -->
+        <div class="note-grid" id="gridView">
+            <!-- 笔记卡片 1 -->
+            <div class="note-card-grid note-text">
+                <div class="note-type-icon">📝</div>
+                <div class="note-title">二分查找算法</div>
+                <div class="note-preview">二分查找是一种高效的查找算法，适用于已排序的数组。时间复杂度为O(log n)。
+实现步骤：
+1. 确定搜索范围，初始为整个数组
+2. 比较中间元素与目标值
+3. 如果相等，返回索引
+4. 如果中间值大于目标值，在左半部分搜索
+5. 如果中间值小于目标值，在右半部分搜索
+6. 重复2-5步骤直到找到或范围为空</div>
+                <div class="note-footer">
+                    <div class="note-date">5月24日</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #9C27B0;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 笔记卡片 2 -->
+            <div class="note-card-grid note-mindmap">
+                <div class="note-type-icon">🔄</div>
+                <div class="note-title">设计模式思维导图</div>
+                <div class="note-preview">创建型模式：
+- 单例模式
+- 工厂方法
+- 抽象工厂
+- 建造者模式
+- 原型模式
+
+结构型模式：
+- 适配器模式
+- 桥接模式
+- 组合模式
+- 装饰器模式
+- 外观模式
+- 享元模式
+- 代理模式</div>
+                <div class="note-footer">
+                    <div class="note-date">5月20日</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #FF9800;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 笔记卡片 3 -->
+            <div class="note-card-grid note-image">
+                <div class="note-type-icon">📷</div>
+                <div class="note-title">数据库索引原理</div>
+                <div class="note-preview">B树与B+树的主要区别：
+1. B树的所有节点既存储索引也存储数据
+2. B+树只有叶子节点存储数据
+3. B+树的叶子节点通过链表连接，有利于范围查询
+4. B+树的非叶子节点可以存储更多索引，降低树高
+5. B+树查询性能更稳定，路径长度一致</div>
+                <div class="note-footer">
+                    <div class="note-date">5月18日</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #4CAF50;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 笔记卡片 4 -->
+            <div class="note-card-grid note-audio">
+                <div class="note-type-icon">🔊</div>
+                <div class="note-title">HTTP协议总结</div>
+                <div class="note-preview">重要状态码：
+200 - 成功
+301 - 永久重定向
+302 - 临时重定向
+400 - 错误请求
+401 - 未授权
+403 - 禁止访问
+404 - 资源不存在
+500 - 服务器错误
+503 - 服务不可用</div>
+                <div class="note-footer">
+                    <div class="note-date">5月15日</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #1E88E5;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 笔记卡片 5 -->
+            <div class="note-card-grid note-text">
+                <div class="note-type-icon">📝</div>
+                <div class="note-title">React Hooks笔记</div>
+                <div class="note-preview">基础Hooks：
+- useState：状态管理
+- useEffect：副作用处理
+- useContext：上下文共享
+
+额外Hooks：
+- useReducer：复杂状态逻辑
+- useCallback：记忆化回调函数
+- useMemo：记忆化计算结果
+- useRef：引用DOM或保存变量</div>
+                <div class="note-footer">
+                    <div class="note-date">5月12日</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #1E88E5;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 笔记卡片 6 -->
+            <div class="note-card-grid note-text">
+                <div class="note-type-icon">📝</div>
+                <div class="note-title">Git常用命令</div>
+                <div class="note-preview">常用Git命令：
+- git init：初始化仓库
+- git clone：克隆仓库
+- git add：添加到暂存区
+- git commit：提交更改
+- git push：推送到远程
+- git pull：拉取更新
+- git branch：分支管理
+- git checkout：切换分支
+- git merge：合并分支</div>
+                <div class="note-footer">
+                    <div class="note-date">5月10日</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #1E88E5;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 笔记列表视图（默认隐藏） -->
+        <div class="note-list" id="listView" style="display: none;">
+            <!-- 笔记列表项 1 -->
+            <div class="note-card-list">
+                <div class="note-content-list">
+                    <div class="note-title">二分查找算法</div>
+                    <div class="note-preview-list">二分查找是一种高效的查找算法，适用于已排序的数组。时间复杂度为O(log n)。</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #9C27B0; display: inline-block;"></div>
+                        <span style="font-size: 12px; color: var(--text-medium); margin-left: 5px;">算法</span>
+                    </div>
+                </div>
+                <div class="note-side">
+                    <div class="note-type-badge">笔记</div>
+                    <div class="note-date-list">5月24日</div>
+                </div>
+            </div>
+            
+            <!-- 笔记列表项 2 -->
+            <div class="note-card-list">
+                <div class="note-content-list">
+                    <div class="note-title">设计模式思维导图</div>
+                    <div class="note-preview-list">创建型模式、结构型模式、行为型模式的详细分类和实现方法。</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #FF9800; display: inline-block;"></div>
+                        <span style="font-size: 12px; color: var(--text-medium); margin-left: 5px;">设计模式</span>
+                    </div>
+                </div>
+                <div class="note-side">
+                    <div class="note-type-badge">思维导图</div>
+                    <div class="note-date-list">5月20日</div>
+                </div>
+            </div>
+            
+            <!-- 笔记列表项 3 -->
+            <div class="note-card-list">
+                <div class="note-content-list">
+                    <div class="note-title">数据库索引原理</div>
+                    <div class="note-preview-list">B树与B+树的主要区别及优缺点分析，MySQL索引的实现原理。</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #4CAF50; display: inline-block;"></div>
+                        <span style="font-size: 12px; color: var(--text-medium); margin-left: 5px;">数据库</span>
+                    </div>
+                </div>
+                <div class="note-side">
+                    <div class="note-type-badge">图解</div>
+                    <div class="note-date-list">5月18日</div>
+                </div>
+            </div>
+            
+            <!-- 笔记列表项 4 -->
+            <div class="note-card-list">
+                <div class="note-content-list">
+                    <div class="note-title">HTTP协议总结</div>
+                    <div class="note-preview-list">HTTP状态码、请求方法、头部字段以及常见问题的音频讲解。</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #1E88E5; display: inline-block;"></div>
+                        <span style="font-size: 12px; color: var(--text-medium); margin-left: 5px;">编程</span>
+                    </div>
+                </div>
+                <div class="note-side">
+                    <div class="note-type-badge">音频</div>
+                    <div class="note-date-list">5月15日</div>
+                </div>
+            </div>
+            
+            <!-- 笔记列表项 5 -->
+            <div class="note-card-list">
+                <div class="note-content-list">
+                    <div class="note-title">React Hooks笔记</div>
+                    <div class="note-preview-list">基础Hooks和额外Hooks的使用方法、注意事项和最佳实践。</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #1E88E5; display: inline-block;"></div>
+                        <span style="font-size: 12px; color: var(--text-medium); margin-left: 5px;">编程</span>
+                    </div>
+                </div>
+                <div class="note-side">
+                    <div class="note-type-badge">笔记</div>
+                    <div class="note-date-list">5月12日</div>
+                </div>
+            </div>
+            
+            <!-- 笔记列表项 6 -->
+            <div class="note-card-list">
+                <div class="note-content-list">
+                    <div class="note-title">Git常用命令</div>
+                    <div class="note-preview-list">常用Git命令的使用方法和场景说明，团队协作中的Git工作流。</div>
+                    <div class="note-tags">
+                        <div class="note-tag" style="background-color: #1E88E5; display: inline-block;"></div>
+                        <span style="font-size: 12px; color: var(--text-medium); margin-left: 5px;">编程</span>
+                    </div>
+                </div>
+                <div class="note-side">
+                    <div class="note-type-badge">笔记</div>
+                    <div class="note-date-list">5月10日</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 创建笔记浮动按钮 -->
+        <div class="create-note-btn" id="createNoteBtn">+</div>
+        
+        <!-- 创建笔记选项菜单 -->
+        <div class="create-menu" id="createMenu">
+            <div class="create-option create-text" data-tooltip="文本笔记">📝</div>
+            <div class="create-option create-image" data-tooltip="图片笔记">📷</div>
+            <div class="create-option create-audio" data-tooltip="语音笔记">🔊</div>
+            <div class="create-option create-mindmap" data-tooltip="思维导图">🔄</div>
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <a href="knowledge-map.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">🌍</div>
+            <div>知识地图</div>
+        </a>
+        <a href="review.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">📝</div>
+            <div>复习</div>
+        </a>
+        <a href="community.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👥</div>
+            <div>社区</div>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👤</div>
+            <div>我的</div>
+        </a>
+    </div>
+    
+    <script>
+        // 视图切换功能
+        const viewOptions = document.querySelectorAll('.view-option');
+        const gridView = document.getElementById('gridView');
+        const listView = document.getElementById('listView');
+        
+        viewOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                viewOptions.forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                
+                const viewType = option.getAttribute('data-view');
+                if (viewType === 'grid') {
+                    gridView.style.display = 'grid';
+                    listView.style.display = 'none';
+                } else {
+                    gridView.style.display = 'none';
+                    listView.style.display = 'flex';
+                }
+            });
+        });
+        
+        // 标签筛选
+        const tagItems = document.querySelectorAll('.tag-item');
+        tagItems.forEach(tag => {
+            tag.addEventListener('click', () => {
+                tagItems.forEach(t => t.classList.remove('active'));
+                tag.classList.add('active');
+                // 这里应该添加实际的笔记过滤逻辑
+            });
+        });
+        
+        // 笔记卡片点击事件
+        const noteCards = document.querySelectorAll('.note-card-grid, .note-card-list');
+        noteCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // 这里应该跳转到笔记详情页或打开笔记编辑器
+                alert('打开笔记详情页面');
+            });
+        });
+        
+        // 创建笔记菜单
+        const createNoteBtn = document.getElementById('createNoteBtn');
+        const createMenu = document.getElementById('createMenu');
+        let menuOpen = false;
+        
+        createNoteBtn.addEventListener('click', () => {
+            menuOpen = !menuOpen;
+            if (menuOpen) {
+                createMenu.classList.add('show');
+            } else {
+                createMenu.classList.remove('show');
+            }
+        });
+        
+        // 创建笔记选项
+        const createOptions = document.querySelectorAll('.create-option');
+        createOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const noteType = option.className.split(' ')[1].replace('create-', '');
+                alert(`创建${option.getAttribute('data-tooltip')}功能正在开发中`);
+                menuOpen = false;
+                createMenu.classList.remove('show');
+            });
+        });
+        
+        // 搜索功能
+        const searchInput = document.querySelector('.search-input');
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            // 这里应该添加实际的搜索逻辑
+        });
+        
+        // 排序功能
+        const sortButton = document.querySelector('.sort-button');
+        sortButton.addEventListener('click', () => {
+            // 这里应该显示排序选项菜单
+            alert('排序选项：最近更新、创建时间、标题字母顺序');
+        });
+        
+        // 标签展开/折叠
+        const tagToggle = document.querySelector('.tag-toggle');
+        let tagsExpanded = true;
+        tagToggle.addEventListener('click', () => {
+            tagsExpanded = !tagsExpanded;
+            tagToggle.textContent = tagsExpanded ? '全部展开' : '全部折叠';
+            // 这里应该添加实际的标签展开/折叠逻辑
+        });
+        
+        // 为底部导航项添加点击效果
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        bottomNavItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                    alert('该功能正在开发中，敬请期待！');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识地图 - 快乐学习</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: var(--bg-white);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+            background-color: #F9F3E5; /* 地图背景色，类似羊皮纸 */
+            overflow: auto; /* 使用auto而不是hidden，允许滚动查看 */
+            margin-bottom: 60px; /* 为固定定位的底部导航栏留出空间 */
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%, rgba(249,243,229,0.3) 100%);
+        }
+        
+        .knowledge-map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-image: radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, rgba(249,243,229,0.4) 70%);
+        }
+        
+        /* 知识地图内容区 - 使用固定大小和居中定位 */
+        .map-content {
+            position: absolute;
+            width: 800px;
+            height: 600px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c0a080' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            box-shadow: 0 0 50px rgba(192, 160, 128, 0.15);
+            border-radius: 20px;
+        }
+        
+        /* 地形元素 */
+        .terrain {
+            position: absolute;
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .mountain {
+            width: 180px;
+            height: 120px;
+            background-color: rgba(192, 160, 128, 0.5);
+            border-radius: 80% 80% 0 0;
+            box-shadow: 0 5px 15px rgba(192, 160, 128, 0.3);
+        }
+        
+        .lake {
+            width: 150px;
+            height: 150px;
+            background-color: rgba(100, 181, 246, 0.5);
+            border-radius: 50%;
+            box-shadow: inset 0 0 20px rgba(100, 181, 246, 0.4);
+        }
+        
+        .forest {
+            width: 200px;
+            height: 150px;
+            background-color: rgba(76, 175, 80, 0.4);
+            border-radius: 40%;
+            box-shadow: inset 0 0 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        /* 知识点样式 */
+        .knowledge-node {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: white;
+            border: 3px solid var(--map-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 5;
+            font-size: 16px;
+        }
+        
+        .knowledge-node:hover, .knowledge-node.active {
+            transform: scale(1.15);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .knowledge-node.mastered {
+            border-color: var(--success-color);
+            border-width: 4px;
+        }
+        
+        .knowledge-node.learning {
+            border-color: var(--primary-color);
+            border-width: 4px;
+        }
+        
+        .knowledge-node.new {
+            border-color: var(--map-color);
+            border-width: 3px;
+        }
+        
+        /* 连接线样式 */
+        .path {
+            position: absolute;
+            height: 5px;
+            background-color: rgba(192, 160, 128, 0.7);
+            transform-origin: left center;
+            z-index: 1;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .path:hover {
+            background-color: rgba(192, 160, 128, 0.9);
+            height: 7px;
+        }
+        
+        /* 区域样式 */
+        .region {
+            position: absolute;
+            border: 2px dashed rgba(192, 160, 128, 0.7);
+            border-radius: 24px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            z-index: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .region:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-color: rgba(192, 160, 128, 0.9);
+        }
+        
+        .region-label {
+            position: absolute;
+            color: var(--text-dark);
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            white-space: nowrap;
+        }
+        
+        /* 控制面板 */
+        .map-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: white;
+            border: none;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        /* 弹出层详情 */
+        .node-detail {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+        
+        .node-detail.show {
+            transform: translateY(0);
+        }
+        
+        .drag-handle {
+            width: 40px;
+            height: 5px;
+            background-color: var(--border-color);
+            border-radius: 3px;
+            margin: 0 auto 15px;
+        }
+        
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .detail-close {
+            width: 36px;
+            height: 36px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .progress-box {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: var(--bg-gray);
+            border-radius: 10px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* 视图切换菜单 */
+        .view-switch-menu {
+            position: absolute;
+            top: 56px;
+            right: 16px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            z-index: 100;
+            overflow: hidden;
+            display: none;
+            transition: all 0.3s ease;
+            transform-origin: top right;
+            transform: scale(0.9);
+            opacity: 0;
+        }
+
+        .view-switch-menu.show {
+            display: block !important;
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .view-option {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--divider-color);
+        }
+
+        .view-option:last-child {
+            border-bottom: none;
+        }
+
+        .view-option:hover {
+            background-color: var(--bg-gray);
+        }
+        
+        .view-option span:first-child {
+            font-size: 20px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .view-option span:last-child {
+            font-weight: 500;
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            height: 60px;
+            background-color: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 10;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        
+        /* 顶部导航栏 */
+        .navbar {
+            height: 56px;
+            background-color: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .navbar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        .navbar-actions .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            box-shadow: none;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .navbar-actions .btn:hover {
+            background-color: rgba(30, 136, 229, 0.1);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+        <div class="navbar-title">知识地图</div>
+        <div class="navbar-actions">
+            <button class="btn btn-sm btn-outline" id="viewSwitchBtn">
+                <span>视图切换</span>
+                <span style="margin-left: 5px;">▼</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 视图切换菜单 -->
+    <div class="view-switch-menu" id="viewSwitchMenu">
+        <div class="view-option" data-view="map">
+            <span>🌍</span>
+            <span>知识地图</span>
+        </div>
+        <div class="view-option" data-view="tree">
+            <span>🌳</span>
+            <span>知识树</span>
+        </div>
+        <div class="view-option" data-view="globe">
+            <span>🔮</span>
+            <span>知识球</span>
+        </div>
+    </div>
+    
+    <!-- 地图区域 -->
+    <div class="map-container" id="mapContainer">
+        <div class="knowledge-map" id="knowledgeMap">
+            <div class="map-content">
+                <!-- 区域1：数学基础 -->
+                <div class="region" style="left: 300px; top: 200px; width: 300px; height: 200px;">
+                    <div class="region-label" style="left: 20px; top: -30px;">数学基础</div>
+                </div>
+                
+                <!-- 区域2：物理学 -->
+                <div class="region" style="left: 500px; top: 100px; width: 250px; height: 200px;">
+                    <div class="region-label" style="left: 20px; top: -30px;">物理学</div>
+                </div>
+                
+                <!-- 区域3：编程基础 -->
+                <div class="region" style="left: 100px; top: 300px; width: 250px; height: 200px;">
+                    <div class="region-label" style="left: 20px; top: -30px;">编程基础</div>
+                </div>
+                
+                <!-- 地形元素 -->
+                <div class="terrain lake" style="left: 400px; top: 350px;"></div>
+                <div class="terrain mountain" style="left: 200px; top: 150px;"></div>
+                <div class="terrain forest" style="left: 500px; top: 250px;"></div>
+                <div class="terrain mountain" style="left: 300px; top: 450px;"></div>
+                <div class="terrain forest" style="left: 100px; top: 250px;"></div>
+                
+                <!-- 连接路径 -->
+                <div class="path" style="left: 350px; top: 250px; width: 100px; transform: rotate(30deg);"></div>
+                <div class="path" style="left: 400px; top: 300px; width: 120px; transform: rotate(60deg);"></div>
+                <div class="path" style="left: 320px; top: 270px; width: 100px; transform: rotate(-40deg);"></div>
+                <div class="path" style="left: 450px; top: 220px; width: 100px; transform: rotate(-10deg);"></div>
+                <div class="path" style="left: 270px; top: 320px; width: 80px; transform: rotate(160deg);"></div>
+                <div class="path" style="left: 480px; top: 170px; width: 100px; transform: rotate(20deg);"></div>
+                
+                <!-- 知识节点 -->
+                <div class="knowledge-node mastered" style="left: 320px; top: 220px;">代数</div>
+                <div class="knowledge-node learning" style="left: 390px; top: 280px;">几何</div>
+                <div class="knowledge-node new" style="left: 450px; top: 210px;">统计</div>
+                <div class="knowledge-node learning" style="left: 520px; top: 150px;">力学</div>
+                <div class="knowledge-node new" style="left: 580px; top: 200px;">电磁</div>
+                <div class="knowledge-node new" style="left: 250px; top: 290px;">微积分</div>
+                <div class="knowledge-node mastered" style="left: 150px; top: 350px;">算法</div>
+                <div class="knowledge-node learning" style="left: 220px; top: 400px;">数据</div>
+            </div>
+        </div>
+
+        <!-- 地图控制按钮 -->
+        <div class="map-controls">
+            <button class="control-btn reset">↺</button>
+        </div>
+    </div>
+    
+    <!-- 知识点详情弹窗 -->
+    <div class="node-detail" id="nodeDetail">
+        <div class="drag-handle"></div>
+        <div class="node-header">
+            <h2>几何</h2>
+            <button class="detail-close">×</button>
+        </div>
+        <p>几何是研究形状、大小、空间位置以及它们之间关系的数学分支。</p>
+        
+        <div class="progress-box">
+            <h4>学习进度</h4>
+            <div class="progress mt-8">
+                <div class="progress-bar" style="width: 65%;"></div>
+            </div>
+            <p class="text-sm mt-8">智慧值：65/100</p>
+        </div>
+        
+        <p class="text-sm">相关知识点：代数、三角函数、微积分</p>
+        
+        <div class="action-buttons">
+            <button class="btn btn-primary">复习</button>
+            <button class="btn btn-outline">笔记</button>
+            <button class="btn btn-outline">探索</button>
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <a href="knowledge-map.html" class="bottom-nav-item active">
+            <div class="bottom-nav-icon">🌍</div>
+            <div>知识地图</div>
+        </a>
+        <a href="review.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">📝</div>
+            <div>复习</div>
+        </a>
+        <a href="community.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👥</div>
+            <div>社区</div>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👤</div>
+            <div>我的</div>
+        </a>
+    </div>
+
+    <script>
+        // 知识地图交互逻辑
+        const mapContainer = document.getElementById('mapContainer');
+        const knowledgeMap = document.getElementById('knowledgeMap');
+        const nodeDetail = document.getElementById('nodeDetail');
+        const detailClose = document.querySelector('.detail-close');
+        const knowledgeNodes = document.querySelectorAll('.knowledge-node');
+        const viewSwitchBtn = document.getElementById('viewSwitchBtn');
+        const viewSwitchMenu = document.getElementById('viewSwitchMenu');
+        
+        // 视图切换功能
+        viewSwitchBtn.addEventListener('click', () => {
+            viewSwitchMenu.classList.toggle('show');
+            // 切换按钮上的箭头方向
+            const arrow = viewSwitchBtn.querySelector('span:last-child');
+            arrow.textContent = viewSwitchMenu.classList.contains('show') ? '▲' : '▼';
+        });
+
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!viewSwitchBtn.contains(e.target) && !viewSwitchMenu.contains(e.target)) {
+                viewSwitchMenu.classList.remove('show');
+                // 重置按钮上的箭头方向
+                const arrow = viewSwitchBtn.querySelector('span:last-child');
+                arrow.textContent = '▼';
+            }
+        });
+
+        // 处理视图切换
+        document.querySelectorAll('.view-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const view = option.dataset.view;
+                
+                if (view === 'tree') {
+                    window.location.href = 'knowledge-tree.html';
+                } else if (view === 'globe') {
+                    window.location.href = 'knowledge-globe.html';
+                }
+                // 如果是 map，则不跳转
+                viewSwitchMenu.classList.remove('show');
+            });
+        });
+        
+        // 为底部导航项添加点击效果
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        bottomNavItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                    alert('该功能正在开发中，敬请期待！');
+                }
+            });
+        });
+        
+        // 重置按钮功能
+        document.querySelector('.reset').addEventListener('click', () => {
+            mapContainer.scrollTo({
+                top: (mapContainer.scrollHeight - mapContainer.clientHeight) / 2,
+                left: (mapContainer.scrollWidth - mapContainer.clientWidth) / 2,
+                behavior: 'smooth'
+            });
+        });
+        
+        // 节点点击显示详情
+        knowledgeNodes.forEach(node => {
+            node.addEventListener('click', () => {
+                nodeDetail.classList.add('show');
+            });
+        });
+        
+        // 关闭详情面板
+        detailClose.addEventListener('click', () => {
+            nodeDetail.classList.remove('show');
+        });
+        
+        // 处理详情面板滑动关闭
+        let touchStartY;
+        let detailStartTranslate;
+        
+        nodeDetail.addEventListener('touchstart', (e) => {
+            const touchObj = e.touches[0];
+            touchStartY = parseInt(touchObj.clientY);
+            detailStartTranslate = nodeDetail.getBoundingClientRect().top;
+            e.preventDefault();
+        }, false);
+        
+        nodeDetail.addEventListener('touchmove', (e) => {
+            const touchObj = e.touches[0];
+            const currentY = parseInt(touchObj.clientY);
+            const diff = currentY - touchStartY;
+            
+            if (diff > 0) { // 只允许向下滑动
+                nodeDetail.style.transform = `translateY(${diff}px)`;
+            }
+            
+            e.preventDefault();
+        }, false);
+        
+        nodeDetail.addEventListener('touchend', (e) => {
+            const touchObj = e.changedTouches[0];
+            const endY = parseInt(touchObj.clientY);
+            const diff = endY - touchStartY;
+            
+            if (diff > 100) { // 如果滑动超过100px，关闭详情
+                nodeDetail.classList.remove('show');
+            }
+            
+            nodeDetail.style.transform = '';
+            e.preventDefault();
+        }, false);
+
+        // 页面加载时，让地图居中显示
+        window.addEventListener('load', () => {
+            console.log('地图页面加载完成');
+            setTimeout(() => {
+                // 确保滚动到地图中心位置
+                const centerX = (mapContainer.scrollWidth - mapContainer.clientWidth) / 2;
+                const centerY = (mapContainer.scrollHeight - mapContainer.clientHeight) / 2;
+                mapContainer.scrollTo(centerX, centerY);
+                console.log('地图已居中显示', {centerX, centerY});
+                
+                // 添加轻微的进场动画
+                const mapElements = document.querySelectorAll('.knowledge-node, .region, .path, .terrain');
+                mapElements.forEach((el, index) => {
+                    el.style.opacity = '0';
+                    el.style.transform = el.className.includes('knowledge-node') ? 'scale(0.5)' : 'scale(0.9)';
+                    setTimeout(() => {
+                        el.style.transition = 'all 0.5s ease-out';
+                        el.style.opacity = '1';
+                        el.style.transform = 'scale(1)';
+                    }, 100 + index * 50);
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html> 

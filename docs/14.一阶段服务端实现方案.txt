@@ -1,0 +1,859 @@
+# 快乐学习软件一阶段服务端实现方案
+
+## 1. 实施概述
+
+### 1.1 一阶段目标
+基于PRD需求和技术选型文档，实现快乐学习软件的核心功能MVP版本，为用户提供基础的学习管理和智慧值系统体验。
+
+### 1.2 实施范围
+- **用户管理系统**：用户注册、登录、个人信息管理
+- **知识管理系统**：知识点CRUD、知识树基础功能
+- **学习记录系统**：笔记管理、AI分析集成
+- **智慧值系统**：基础智慧值计算和展示
+- **基础API接口**：支持前端H5页面的核心接口
+
+### 1.3 技术栈确认
+- **后端框架**：Spring Boot 2.7.x
+- **数据库**：MongoDB 5.0+ (主数据库) + Redis (缓存)
+- **数据访问**：Spring Data MongoDB + JPA
+- **安全认证**：Spring Security + JWT
+- **API文档**：Swagger/OpenAPI 3.0 (暂时不涉及)
+- **日志框架**：Logback + SLF4J
+
+## 2. 功能实现优先级
+
+### 2.1 P0 核心功能（必须实现）
+1. **用户认证系统**
+   - 用户注册/登录
+   - JWT Token生成和验证
+   - 基础权限控制
+
+2. **知识点管理**
+   - 知识点CRUD操作
+   - 基础分类和标签
+
+3. **学习笔记系统**
+   - 笔记创建、编辑、删除
+   - 文本内容存储
+   - 基础AI分析集成
+
+4. **智慧值基础功能**
+   - 智慧值计算和存储
+   - 基础衰减算法
+   - 用户智慧值查询
+
+### 2.2 P1 重要功能（优先实现）
+1. **知识树基础功能**
+   - 知识树数据结构
+   - 笔记关联到知识树
+   - 知识树数据查询
+
+2. **用户个人中心**
+   - 个人信息管理
+   - 学习统计展示
+
+3. **系统配置管理**
+   - 基础系统参数配置
+   - 智慧值计算参数
+
+### 2.3 P2 增强功能（后续实现）
+1. **复习提醒系统**
+2. **学习数据分析**
+3. **社交功能基础**
+4. **文件上传功能**
+
+## 3. 数据库设计实现
+
+### 3.1 MongoDB集合设计
+
+#### 3.1.1 用户集合（users）
+```javascript
+{
+  "_id": ObjectId,
+  "username": "string",      // 用户名，唯一
+  "account": "string",       // 账号，唯一
+  "passwordHash": "string",  // 密码哈希
+  "profile": {
+    "nickname": "string",    // 昵称
+    "avatar": "string",      // 头像URL
+    "level": 1,              // 用户等级
+    "totalWisdom": 0         // 总智慧值
+  },
+  "settings": {
+    "language": "zh-CN",     // 语言设置
+    "timezone": "Asia/Shanghai", // 时区
+    "notifications": true    // 通知开关
+  },
+  "status": "active",        // 账户状态：active, inactive, banned
+  "createdAt": ISODate(),
+  "updatedAt": ISODate()
+}
+```
+
+#### 3.1.2 知识点集合（knowledge_points）
+```javascript
+{
+  "_id": ObjectId,
+  "title": "string",         // 知识点标题
+  "content": "string",       // 知识点内容
+  "category": "string",      // 分类
+  "difficulty": 1,           // 难度等级 1-5
+  "importance": 1,           // 重要性 1-5
+  "tags": ["string"],        // 标签数组
+  "prerequisites": [ObjectId], // 前置知识点ID
+  "relatedPoints": [ObjectId], // 相关知识点ID
+  "metadata": {
+    "estimatedTime": 30,     // 预计学习时间(分钟)
+    "contentType": "text",   // 内容类型：text, video, interactive
+    "source": "system"      // 来源：system, user
+  },
+  "status": "active",        // 状态：active, inactive
+  "createdBy": ObjectId,     // 创建者ID
+  "createdAt": ISODate(),
+  "updatedAt": ISODate()
+}
+```
+
+#### 3.1.3 学习笔记集合（learning_notes）
+```javascript
+{
+  "_id": ObjectId,
+  "userId": ObjectId,        // 用户ID
+  "title": "string",         // 笔记标题
+  "content": "string",       // 笔记内容
+  "contentType": "text",     // 内容类型：text, markdown
+  "tags": ["string"],        // 标签
+  "relatedKnowledgePoints": [ObjectId], // 关联知识点
+  "aiAnalysis": {
+    "status": "pending",     // 分析状态：pending, completed, failed
+    "extractedKeywords": ["string"], // 提取的关键词
+    "knowledgePoints": [     // AI识别的知识点
+      {
+        "concept": "string",
+        "importance": 0.8,
+        "category": "string"
+      }
+    ],
+    "summary": "string",     // AI生成的摘要
+    "analyzedAt": ISODate()
+  },
+  "status": "active",        // 状态：active, deleted
+  "createdAt": ISODate(),
+  "updatedAt": ISODate()
+}
+```
+
+#### 3.1.4 智慧值记录集合（wisdom_records）
+```javascript
+{
+  "_id": ObjectId,
+  "userId": ObjectId,        // 用户ID
+  "knowledgePointId": ObjectId, // 知识点ID
+  "baseWisdomValue": 100,    // 基础智慧值
+  "currentWisdomValue": 85,  // 当前智慧值
+  "memoryStability": 24,     // 记忆稳定性参数(小时)
+  "lastStudyTime": ISODate(), // 最后学习时间
+  "lastReviewTime": ISODate(), // 最后复习时间
+  "reviewCount": 0,          // 复习次数
+  "difficultyLevel": "intermediate", // 难度级别
+  "importanceLevel": "important",    // 重要性级别
+  "personalFactors": {
+    "learningAbility": 1.0,  // 学习能力系数
+    "interestLevel": 0.8     // 兴趣水平
+  },
+  "createdAt": ISODate(),
+  "updatedAt": ISODate()
+}
+```
+
+#### 3.1.5 知识树集合（knowledge_trees）
+```javascript
+{
+  "_id": ObjectId,
+  "userId": ObjectId,        // 用户ID
+  "name": "我的知识树",       // 知识树名称
+  "description": "string",   // 描述
+  "treeData": {
+    "nodes": [               // 节点数组
+      {
+        "id": "node_1",
+        "knowledgePointId": ObjectId,
+        "position": {"x": 100, "y": 200},
+        "level": 1,
+        "status": "unlocked" // locked, unlocked, mastered
+      }
+    ],
+    "edges": [               // 连接边数组
+      {
+        "source": "node_1",
+        "target": "node_2",
+        "type": "prerequisite"
+      }
+    ]
+  },
+  "status": "active",        // 状态：active, archived
+  "createdAt": ISODate(),
+  "updatedAt": ISODate()
+}
+```
+
+### 3.2 索引设计
+```javascript
+// 用户集合索引
+db.users.createIndex({"account": 1}, {"unique": true})
+db.users.createIndex({"username": 1}, {"unique": true})
+db.users.createIndex({"status": 1})
+
+// 知识点集合索引
+db.knowledge_points.createIndex({"category": 1, "difficulty": 1})
+db.knowledge_points.createIndex({"tags": 1})
+db.knowledge_points.createIndex({"status": 1})
+db.knowledge_points.createIndex({"title": "text", "content": "text"})
+
+// 学习笔记索引
+db.learning_notes.createIndex({"userId": 1, "createdAt": -1})
+db.learning_notes.createIndex({"userId": 1, "status": 1})
+db.learning_notes.createIndex({"tags": 1})
+db.learning_notes.createIndex({"title": "text", "content": "text"})
+
+// 智慧值记录索引
+db.wisdom_records.createIndex({"userId": 1, "knowledgePointId": 1}, {"unique": true})
+db.wisdom_records.createIndex({"userId": 1, "lastStudyTime": -1})
+db.wisdom_records.createIndex({"lastReviewTime": 1})
+
+// 知识树索引
+db.knowledge_trees.createIndex({"userId": 1, "status": 1})
+```
+
+## 4. 核心模块实现
+
+### 4.1 用户管理模块
+
+#### 4.1.1 实体类设计
+```java
+@Document(collection = "users")
+@Data
+public class User {
+    @Id
+    private String id;
+
+    @Indexed(unique = true)
+    private String username;
+
+    @Indexed(unique = true)
+    private String account;
+
+    private String passwordHash;
+
+    @Embedded
+    private UserProfile profile;
+
+    @Embedded
+    private UserSettings settings;
+
+    private String status = "active";
+
+    private Date createdAt;
+    private Date updatedAt;
+}
+
+@Data
+public class UserProfile {
+    private String nickname;
+    private String avatar;
+    private Integer level = 1;
+    private Double totalWisdom = 0.0;
+}
+
+@Data
+public class UserSettings {
+    private String language = "zh-CN";
+    private String timezone = "Asia/Shanghai";
+    private Boolean notifications = true;
+}
+```
+
+#### 4.1.2 Repository接口
+```java
+public interface UserRepository extends MongoRepository<User, String> {
+    Optional<User> findByAccount(String account);
+    Optional<User> findByUsername(String username);
+    List<User> findByStatus(String status);
+}
+```
+
+#### 4.1.3 Service实现
+```java
+@Service
+@Transactional
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public User registerUser(UserRegistrationRequest request) {
+        // 用户注册逻辑
+        validateUserRegistration(request);
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setAccount(request.getAccount());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setCreatedAt(new Date());
+        user.setUpdatedAt(new Date());
+
+        return userRepository.save(user);
+    }
+
+    public Optional<User> authenticateUser(String account, String password) {
+        // 用户认证逻辑
+        Optional<User> userOpt = userRepository.findByAccount(account);
+        if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPasswordHash())) {
+            return userOpt;
+        }
+        return Optional.empty();
+    }
+}
+```
+
+#### 4.1.4 Controller实现
+```java
+@RestController
+@RequestMapping("/api/users")
+@Validated
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @PostMapping("/register")
+    public ResultVo<UserResponse> register(@RequestBody @Valid UserRegistrationRequest request) {
+        User user = userService.registerUser(request);
+        return ResultVo.success(UserResponse.from(user));
+    }
+
+    @PostMapping("/login")
+    public ResultVo<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+        Optional<User> userOpt = userService.authenticateUser(request.getAccount(), request.getPassword());
+        if (userOpt.isPresent()) {
+            String token = jwtTokenProvider.generateToken(userOpt.get());
+            return ResultVo.success(new LoginResponse(token, UserResponse.from(userOpt.get())));
+        }
+        throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    @GetMapping("/profile")
+    @PreAuthorize("hasRole('USER')")
+    public ResultVo<UserResponse> getProfile(Authentication authentication) {
+        String userId = authentication.getName();
+        User user = userService.findById(userId);
+        return ResultVo.success(UserResponse.from(user));
+    }
+}
+```
+
+### 4.2 知识点管理模块
+
+#### 4.2.1 实体类设计
+```java
+@Document(collection = "knowledge_points")
+@Data
+public class KnowledgePoint {
+    @Id
+    private String id;
+
+    private String title;
+    private String content;
+    private String category;
+    private Integer difficulty;
+    private Integer importance;
+    private List<String> tags;
+    private List<String> prerequisites;
+    private List<String> relatedPoints;
+
+    @Embedded
+    private KnowledgeMetadata metadata;
+
+    private String status = "active";
+    private String createdBy;
+    private Date createdAt;
+    private Date updatedAt;
+}
+
+@Data
+public class KnowledgeMetadata {
+    private Integer estimatedTime;
+    private String contentType;
+    private String source;
+}
+```
+
+#### 4.2.2 Service实现
+```java
+@Service
+public class KnowledgePointService {
+
+    @Autowired
+    private KnowledgePointRepository knowledgePointRepository;
+
+    public Page<KnowledgePoint> getKnowledgePoints(String category, List<String> tags, Pageable pageable) {
+        Criteria criteria = new Criteria();
+        criteria.and("status").is("active");
+
+        if (StringUtils.hasText(category)) {
+            criteria.and("category").is(category);
+        }
+
+        if (tags != null && !tags.isEmpty()) {
+            criteria.and("tags").in(tags);
+        }
+
+        Query query = new Query(criteria).with(pageable);
+        List<KnowledgePoint> knowledgePoints = mongoTemplate.find(query, KnowledgePoint.class);
+        long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), KnowledgePoint.class);
+
+        return PageableExecutionUtils.getPage(knowledgePoints, pageable, () -> total);
+    }
+
+    public KnowledgePoint createKnowledgePoint(CreateKnowledgePointRequest request, String userId) {
+        KnowledgePoint knowledgePoint = new KnowledgePoint();
+        knowledgePoint.setTitle(request.getTitle());
+        knowledgePoint.setContent(request.getContent());
+        knowledgePoint.setCategory(request.getCategory());
+        knowledgePoint.setDifficulty(request.getDifficulty());
+        knowledgePoint.setImportance(request.getImportance());
+        knowledgePoint.setTags(request.getTags());
+        knowledgePoint.setCreatedBy(userId);
+        knowledgePoint.setCreatedAt(new Date());
+        knowledgePoint.setUpdatedAt(new Date());
+
+        return knowledgePointRepository.save(knowledgePoint);
+    }
+}
+```
+
+### 4.3 学习笔记模块
+
+#### 4.3.1 实体类设计
+```java
+@Document(collection = "learning_notes")
+@Data
+public class LearningNote {
+    @Id
+    private String id;
+
+    private String userId;
+    private String title;
+    private String content;
+    private String contentType = "text";
+    private List<String> tags;
+    private List<String> relatedKnowledgePoints;
+
+    @Embedded
+    private AIAnalysis aiAnalysis;
+
+    private String status = "active";
+    private Date createdAt;
+    private Date updatedAt;
+}
+
+@Data
+public class AIAnalysis {
+    private String status = "pending";
+    private List<String> extractedKeywords;
+    private List<KnowledgePointConcept> knowledgePoints;
+    private String summary;
+    private Date analyzedAt;
+}
+
+@Data
+public class KnowledgePointConcept {
+    private String concept;
+    private Double importance;
+    private String category;
+}
+```
+
+#### 4.3.2 AI分析服务
+```java
+@Service
+public class NoteAnalysisService {
+
+    @Autowired
+    private ModelAPIUtil modelAPIUtil;
+
+    @Async
+    public CompletableFuture<AIAnalysis> analyzeNoteContent(String content) {
+        try {
+            // 调用大模型API分析笔记内容
+            AnalysisRequest request = new AnalysisRequest();
+            request.setContent(content);
+            request.setTask("extract_knowledge_points");
+
+            AnalysisResponse response = modelAPIUtil.callAnalysisAPI(request);
+
+            AIAnalysis analysis = new AIAnalysis();
+            analysis.setStatus("completed");
+            analysis.setExtractedKeywords(response.getKeywords());
+            analysis.setKnowledgePoints(response.getKnowledgePoints());
+            analysis.setSummary(response.getSummary());
+            analysis.setAnalyzedAt(new Date());
+
+            return CompletableFuture.completedFuture(analysis);
+        } catch (Exception e) {
+            AIAnalysis analysis = new AIAnalysis();
+            analysis.setStatus("failed");
+            return CompletableFuture.completedFuture(analysis);
+        }
+    }
+}
+```
+
+### 4.4 智慧值计算模块
+
+#### 4.4.1 实体类设计
+```java
+@Document(collection = "wisdom_records")
+@Data
+public class WisdomRecord {
+    @Id
+    private String id;
+
+    private String userId;
+    private String knowledgePointId;
+    private Double baseWisdomValue;
+    private Double currentWisdomValue;
+    private Double memoryStability = 24.0; // 默认24小时
+    private Date lastStudyTime;
+    private Date lastReviewTime;
+    private Integer reviewCount = 0;
+    private String difficultyLevel;
+    private String importanceLevel;
+
+    @Embedded
+    private PersonalFactors personalFactors;
+
+    private Date createdAt;
+    private Date updatedAt;
+}
+
+@Data
+public class PersonalFactors {
+    private Double learningAbility = 1.0;
+    private Double interestLevel = 0.8;
+}
+```
+
+#### 4.4.2 智慧值计算服务
+```java
+@Service
+public class WisdomCalculationService {
+
+    @Autowired
+    private WisdomRecordRepository wisdomRecordRepository;
+
+    public Double calculateCurrentWisdom(WisdomRecord record) {
+        if (record.getLastStudyTime() == null) {
+            return 0.0;
+        }
+
+        long timeDiffHours = (System.currentTimeMillis() - record.getLastStudyTime().getTime()) / (1000 * 60 * 60);
+        double memoryRetention = Math.exp(-timeDiffHours / record.getMemoryStability());
+
+        return record.getBaseWisdomValue() * memoryRetention * record.getPersonalFactors().getLearningAbility();
+    }
+
+    public WisdomRecord updateWisdomAfterStudy(String userId, String knowledgePointId, Double wisdomGained) {
+        Optional<WisdomRecord> existingRecord = wisdomRecordRepository.findByUserIdAndKnowledgePointId(userId, knowledgePointId);
+
+        WisdomRecord record;
+        if (existingRecord.isPresent()) {
+            record = existingRecord.get();
+            record.setBaseWisdomValue(record.getBaseWisdomValue() + wisdomGained);
+        } else {
+            record = new WisdomRecord();
+            record.setUserId(userId);
+            record.setKnowledgePointId(knowledgePointId);
+            record.setBaseWisdomValue(wisdomGained);
+            record.setCreatedAt(new Date());
+        }
+
+        record.setCurrentWisdomValue(record.getBaseWisdomValue());
+        record.setLastStudyTime(new Date());
+        record.setUpdatedAt(new Date());
+
+        return wisdomRecordRepository.save(record);
+    }
+
+    @Scheduled(fixedRate = 3600000) // 每小时执行一次
+    public void batchUpdateWisdomValues() {
+        List<WisdomRecord> records = wisdomRecordRepository.findAll();
+        for (WisdomRecord record : records) {
+            Double currentWisdom = calculateCurrentWisdom(record);
+            if (!currentWisdom.equals(record.getCurrentWisdomValue())) {
+                record.setCurrentWisdomValue(currentWisdom);
+                record.setUpdatedAt(new Date());
+                wisdomRecordRepository.save(record);
+            }
+        }
+    }
+}
+```
+
+### 4.5 知识树模块
+
+#### 4.5.1 实体类设计
+```java
+@Document(collection = "knowledge_trees")
+@Data
+public class KnowledgeTree {
+    @Id
+    private String id;
+
+    private String userId;
+    private String name;
+    private String description;
+
+    @Embedded
+    private TreeData treeData;
+
+    private String status = "active";
+    private Date createdAt;
+    private Date updatedAt;
+}
+
+@Data
+public class TreeData {
+    private List<TreeNode> nodes;
+    private List<TreeEdge> edges;
+}
+
+@Data
+public class TreeNode {
+    private String id;
+    private String knowledgePointId;
+    private Position position;
+    private Integer level;
+    private String status; // locked, unlocked, mastered
+}
+
+@Data
+public class TreeEdge {
+    private String source;
+    private String target;
+    private String type;
+}
+
+@Data
+public class Position {
+    private Double x;
+    private Double y;
+}
+```
+
+#### 4.5.2 知识树服务
+```java
+@Service
+public class KnowledgeTreeService {
+
+    @Autowired
+    private KnowledgeTreeRepository knowledgeTreeRepository;
+
+    @Autowired
+    private LearningNoteRepository learningNoteRepository;
+
+    public KnowledgeTree associateNoteToTree(String treeId, String noteId) {
+        KnowledgeTree tree = knowledgeTreeRepository.findById(treeId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.TREE_NOT_FOUND));
+
+        LearningNote note = learningNoteRepository.findById(noteId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOTE_NOT_FOUND));
+
+        // 根据笔记的AI分析结果，关联到知识树的相应节点
+        if (note.getAiAnalysis() != null && note.getAiAnalysis().getKnowledgePoints() != null) {
+            for (KnowledgePointConcept concept : note.getAiAnalysis().getKnowledgePoints()) {
+                // 查找匹配的知识树节点并建立关联
+                updateTreeNodeWithNote(tree, concept, noteId);
+            }
+        }
+
+        tree.setUpdatedAt(new Date());
+        return knowledgeTreeRepository.save(tree);
+    }
+
+    private void updateTreeNodeWithNote(KnowledgeTree tree, KnowledgePointConcept concept, String noteId) {
+        // 实现知识点概念与知识树节点的匹配和关联逻辑
+        // 这里可以根据概念名称、分类等信息找到对应的树节点
+        // 并更新节点状态或添加关联信息
+    }
+}
+```
+
+## 5. API接口实现
+
+### 5.1 统一响应格式
+```java
+@Data
+public class ResultVo<T> {
+    private Integer code;
+    private String message;
+    private T data;
+    private Long timestamp;
+
+    public static <T> ResultVo<T> success(T data) {
+        ResultVo<T> result = new ResultVo<>();
+        result.setCode(200);
+        result.setMessage("success");
+        result.setData(data);
+        result.setTimestamp(System.currentTimeMillis());
+        return result;
+    }
+
+    public static <T> ResultVo<T> error(Integer code, String message) {
+        ResultVo<T> result = new ResultVo<>();
+        result.setCode(code);
+        result.setMessage(message);
+        result.setTimestamp(System.currentTimeMillis());
+        return result;
+    }
+}
+```
+
+### 5.2 核心API接口列表
+
+#### 5.2.1 用户管理API
+```
+POST   /api/users/register           # 用户注册
+POST   /api/users/login              # 用户登录
+GET    /api/users/profile            # 获取用户信息
+PUT    /api/users/profile            # 更新用户信息
+POST   /api/users/logout             # 用户登出
+```
+
+#### 5.2.2 知识点管理API
+```
+GET    /api/knowledge/points         # 获取知识点列表
+GET    /api/knowledge/points/{id}    # 获取知识点详情
+POST   /api/knowledge/points         # 创建知识点
+PUT    /api/knowledge/points/{id}    # 更新知识点
+DELETE /api/knowledge/points/{id}    # 删除知识点
+```
+
+#### 5.2.3 学习笔记API
+```
+GET    /api/notes                    # 获取笔记列表
+GET    /api/notes/{id}               # 获取笔记详情
+POST   /api/notes                    # 创建笔记
+PUT    /api/notes/{id}               # 更新笔记
+DELETE /api/notes/{id}               # 删除笔记
+GET    /api/notes/{id}/analysis      # 获取笔记AI分析结果
+```
+
+#### 5.2.4 智慧值API
+```
+GET    /api/wisdom/user/{userId}/total              # 获取用户总智慧值
+GET    /api/wisdom/knowledge-point/{knowledgePointId} # 获取知识点智慧值
+POST   /api/wisdom/study-complete                   # 学习完成更新智慧值
+```
+
+#### 5.2.5 知识树API
+```
+GET    /api/knowledge-trees/{userId}                # 获取用户知识树
+PUT    /api/knowledge-trees/{userId}                # 更新知识树
+POST   /api/knowledge-trees/{treeId}/associate      # 关联笔记到知识树
+```
+
+## 6. 配置文件设置
+
+### 6.1 application.yml
+```yaml
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: happy-learning
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/happy_learning
+      auto-index-creation: true
+
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+  security:
+    jwt:
+      secret: happy-learning-jwt-secret-key-2024
+      expiration: 604800000 # 7 days
+
+logging:
+  level:
+    com.demo.springboot: DEBUG
+    org.springframework.data.mongodb: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# 大模型API配置
+model:
+  api:
+    url:
+    key: your-api-key
+    timeout: 30000
+```
+
+### 6.2 pom.xml依赖配置
+```xml
+<dependencies>
+    <!-- Spring Boot Starter -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Spring Boot MongoDB -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-mongodb</artifactId>
+    </dependency>
+
+    <!-- Spring Boot Redis -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+
+    <!-- Spring Security -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- JWT -->
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>j

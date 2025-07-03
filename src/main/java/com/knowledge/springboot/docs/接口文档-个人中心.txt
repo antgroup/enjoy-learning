@@ -1,0 +1,286 @@
+# 认证接口文档
+
+## 重要说明
+
+所有接口（除了登录接口外）都需要在请求头中携带认证令牌（Authorization），系统会自动从认证令牌中获取用户ID，不需要在请求参数中额外传递用户ID。
+
+## 一、登录接口
+
+### 1. 接口概述
+
+该接口实现用户登录功能，同时包含注册功能。即：当用户第一次登录时自动注册，第二次登录时直接验证密码。
+
+- **接口URL**：`/api/auth/login`
+- **请求方式**：POST
+- **接口说明**：用户登录或注册，如果账号不存在则自动注册新用户
+
+### 2. 请求参数
+
+#### 请求头
+
+| 参数名 | 必选 | 类型 | 说明 |
+| ------ | ---- | ---- | ---- |
+| Content-Type | 是 | String | 请求体类型，值为application/json |
+
+#### 请求体
+
+| 参数名 | 必选 | 类型 | 说明 |
+| ------ | ---- | ---- | ---- |
+| account | 是 | String | 用户账号，登录凭证 |
+| password | 是 | String | 用户密码 |
+| username | 否 | String | 用户名，仅在首次登录(注册)时有效，为空时默认使用account作为username |
+
+#### 请求示例
+
+```json
+{
+  "account": "user@example.com",
+  "password": "password123",
+  "username": "用户昵称"
+}
+```
+
+### 3. 响应参数
+
+#### 响应体
+
+| 参数名 | 类型 | 说明 |
+| ------ | ---- | ---- |
+| code | String | 状态码，00000表示成功 |
+| userHint | String | 用户提示信息，SUCCESS表示成功 |
+| errorMessage | String | 错误信息，仅在出错时返回 |
+| data | Object | 响应数据 |
+
+##### data参数说明
+
+| 参数名 | 类型 | 说明 |
+| ------ | ---- | ---- |
+| success | Boolean | 是否成功 |
+| isNewUser | Boolean | 是否为新用户（首次登录） |
+| token | String | 登录令牌，后续请求需要在Header中携带 |
+| userId | String | 用户ID |
+| username | String | 用户名 |
+| account | String | 用户账号 |
+
+#### 响应示例（成功）
+
+首次登录（注册）：
+
+```json
+{
+  "code": "00000",
+  "userHint": "SUCCESS",
+  "data": {
+    "success": true,
+    "isNewUser": true,
+    "token": "eyJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NDgxMzQ3ODgsInVzZXJJZCI6IjY4MzExYTA0YTAzYzg5NWEyMjJmZjViZSIsImlhdCI6MTc0ODA0ODM4OCwiYWNjb3VudCI6InRlc3RfYWNjb3VudF9kZTE2NzI1NiIsImp0aSI6ImVkNGViMzRhLWFiZjItNDQ0Yi05MDI0LTU0NGNkODU5MWM2MCIsInVzZXJuYW1lIjoidGVzdF91c2VyX2RlMTY3MjU2In0.fZZQS_YNXvavuX_oiRMh4fabqLGxYsA0NrexFJnzg71Qlv-R0MBhLn3bMKwc85GIp2gZfS5ebjqaejNCopfN4w",
+    "userId": "68311a04a03c895a222ff5be",
+    "username": "用户昵称",
+    "account": "user@example.com"
+  }
+}
+```
+
+再次登录：
+
+```json
+{
+  "code": "00000",
+  "userHint": "SUCCESS",
+  "data": {
+    "success": true,
+    "isNewUser": false,
+    "token": "eyJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NDgxMzQ3ODgsInVzZXJJZCI6IjY4MzExYTA0YTAzYzg5NWEyMjJmZjViZSIsImlhdCI6MTc0ODA0ODM4OCwiYWNjb3VudCI6InRlc3RfYWNjb3VudF9kZTE2NzI1NiIsImp0aSI6IjhjZTM3YjllLTE0NGEtNGQzYi1hOGVlLTJlN2I1M2JlM2M4OCIsInVzZXJuYW1lIjoidGVzdF91c2VyX2RlMTY3MjU2In0.fT0kMAJAZthAZop7CKWnUFvG3TBWNwobIGk9N6POr8xrnBPBaCDlZ13DmW6if14KR5Jf91gQXQyDPdfOXXdDVg",
+    "userId": "68311a04a03c895a222ff5be",
+    "username": "用户昵称",
+    "account": "user@example.com"
+  }
+}
+```
+
+#### 响应示例（失败）
+
+密码错误：
+
+```json
+{
+  "code": "A0400",
+  "userHint": "USER INPUT PARAM ERROR",
+  "errorMessage": "密码错误",
+  "data": null
+}
+```
+
+### 4. cURL命令示例
+
+#### 注册新用户
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": "user@example.com",
+    "password": "password123",
+    "username": "用户昵称"
+  }'
+```
+
+#### 已有用户登录
+
+```bash
+curl -X POST http://localhost:8080/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": "user@example.com",
+    "password": "password123"
+  }'
+```
+
+## 二、获取当前用户信息接口
+
+### 1. 接口概述
+
+- **接口URL**：`/auth/me`
+- **请求方式**：GET
+- **接口说明**：获取当前登录用户的信息
+
+### 2. 请求参数
+
+#### 请求头
+
+| 参数名 | 必选 | 类型 | 说明 |
+| ------ | ---- | ---- | ---- |
+| Authorization | 是 | String | Bearer开头的令牌，如"Bearer eyJhbGci..." |
+
+### 3. 响应参数
+
+#### 响应体
+
+| 参数名 | 类型 | 说明 |
+| ------ | ---- | ---- |
+| code | String | 状态码，00000表示成功 |
+| userHint | String | 用户提示信息 |
+| data | Object | 用户信息对象 |
+
+##### data参数说明
+
+| 参数名 | 类型 | 说明 |
+| ------ | ---- | ---- |
+| id | String | 用户ID |
+| username | String | 用户名 |
+| account | String | 账号 |
+| status | String | 用户状态 |
+| createdAt | String | 创建时间 |
+| updatedAt | String | 更新时间 |
+
+#### 响应示例（成功）
+
+```json
+{
+  "code": "00000",
+  "userHint": "SUCCESS",
+  "data": {
+    "id": "68311a04a03c895a222ff5be",
+    "username": "用户昵称",
+    "account": "user@example.com",
+    "status": "active",
+    "createdAt": "2025-05-24 09:00:06",
+    "updatedAt": "2025-05-24 09:00:06"
+  }
+}
+```
+
+#### 响应示例（失败）
+
+```json
+{
+  "code": "A0200",
+  "userHint": "USER LOGIN ERROR",
+  "errorMessage": "USER LOGIN ERROR",
+  "data": null
+}
+```
+
+### 4. cURL命令示例
+
+```bash
+curl -X GET http://localhost:8080/auth/me \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NDgxMzQ3ODgsInVzZXJJZCI6IjY4MzExYTA0YTAzYzg5NWEyMjJmZjViZSIsImlhdCI6MTc0ODA0ODM4OCwiYWNjb3VudCI6InRlc3RfYWNjb3VudF9kZTE2NzI1NiIsImp0aSI6ImVkNGViMzRhLWFiZjItNDQ0Yi05MDI0LTU0NGNkODU5MWM2MCIsInVzZXJuYW1lIjoidGVzdF91c2VyX2RlMTY3MjU2In0.fZZQS_YNXvavuX_oiRMh4fabqLGxYsA0NrexFJnzg71Qlv-R0MBhLn3bMKwc85GIp2gZfS5ebjqaejNCopfN4w'
+```
+
+## 三、用户登出接口
+
+### 1. 接口概述
+
+- **接口URL**：`/auth/logout`
+- **请求方式**：POST
+- **接口说明**：用户登出，使当前令牌失效
+
+### 2. 请求参数
+
+#### 请求头
+
+| 参数名 | 必选 | 类型 | 说明 |
+| ------ | ---- | ---- | ---- |
+| Authorization | 是 | String | Bearer开头的令牌，如"Bearer eyJhbGci..." |
+
+### 3. 响应参数
+
+#### 响应体
+
+| 参数名 | 类型 | 说明 |
+| ------ | ---- | ---- |
+| code | String | 状态码，00000表示成功 |
+| userHint | String | 用户提示信息 |
+| data | Boolean | true表示登出成功 |
+
+#### 响应示例（成功）
+
+```json
+{
+  "code": "00000",
+  "userHint": "SUCCESS",
+  "data": true
+}
+```
+
+#### 响应示例（失败）
+
+```json
+{
+  "code": "A0200",
+  "userHint": "USER LOGIN ERROR",
+  "errorMessage": "USER LOGIN ERROR",
+  "data": null
+}
+```
+
+### 4. cURL命令示例
+
+```bash
+curl -X POST http://localhost:8080/auth/logout \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NDgxMzQ3ODgsInVzZXJJZCI6IjY4MzExYTA0YTAzYzg5NWEyMjJmZjViZSIsImlhdCI6MTc0ODA0ODM4OCwiYWNjb3VudCI6InRlc3RfYWNjb3VudF9kZTE2NzI1NiIsImp0aSI6ImVkNGViMzRhLWFiZjItNDQ0Yi05MDI0LTU0NGNkODU5MWM2MCIsInVzZXJuYW1lIjoidGVzdF91c2VyX2RlMTY3MjU2In0.fZZQS_YNXvavuX_oiRMh4fabqLGxYsA0NrexFJnzg71Qlv-R0MBhLn3bMKwc85GIp2gZfS5ebjqaejNCopfN4w'
+```
+
+## 四、错误码说明
+
+| 错误码 | 说明 |
+| ------ | ---- |
+| 00000 | 成功 |
+| A0400 | 用户输入参数错误 |
+| A0200 | 用户登录错误 |
+| B0001 | 系统内部错误 |
+
+## 五、接口使用说明
+
+1. 登录成功后，后续请求需要在HTTP请求头中添加`Authorization`字段，值为`Bearer `加上返回的token，例如：
+   ```
+   Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NDgxMzQ...
+   ```
+
+2. token有效期为24小时，过期后需要重新登录
+
+3. 用户登出会使当前token失效，再次使用需要重新登录获取新token
+
+4. 系统使用拦截器自动验证需要权限的接口，无需单独调用验证令牌接口
+

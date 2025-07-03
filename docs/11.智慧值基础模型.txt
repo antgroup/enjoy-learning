@@ -1,0 +1,418 @@
+# 智慧值基础模型 - 大语言模型API调用方案
+
+## 1. 概述
+
+为了实现智慧值的智能计算和个性化调整，我们需要调用外部大语言模型API来分析学习内容、评估知识点特征，并计算最终的智慧值。本文档定义了调用大语言模型所需的prompt模板和参数结构。
+
+## 2. API调用场景
+
+### 2.1 主要使用场景
+1. **知识点分析**：分析学习内容，确定难度系数和重要性系数
+2. **学习质量评估**：根据用户学习行为和成果，评估完成质量系数
+3. **个性化调整**：根据用户历史数据，调整个性化参数
+4. **智慧值计算**：综合各项参数，计算最终智慧值
+
+### 2.2 调用时机
+- 用户完成新的学习任务时
+- 用户进行复习活动时
+- 系统定期重新评估知识点时
+- 用户学习模式发生变化时
+
+## 3. Prompt模板设计
+
+### 3.1 知识点分析Prompt
+
+```
+你是一个专业的教育评估专家，擅长分析学习内容的难度和重要性。请根据以下信息，对知识点进行专业评估：
+
+**任务**：分析知识点特征，确定难度系数和重要性系数
+
+**知识点信息**：
+- 知识点名称：{knowledge_point_name}
+- 学科领域：{subject_area}
+- 知识点描述：{knowledge_description}
+- 学习内容类型：{content_type}
+
+**评估标准**：
+
+**难度系数分级**：
+- 入门级（1.0）：基础概念、简单操作，无需复杂思维
+- 进阶级（1.5）：复杂概念、综合应用，需要一定理解能力
+- 高级（2.0）：深度理论、创新应用，需要较强分析能力
+- 专家级（2.5）：前沿技术、原创研究，需要专业深度思考
+
+**重要性系数分级**：
+- 核心知识（2.0）：学科基础、必备技能，对后续学习至关重要
+- 重要知识（1.5）：常用技能、重要概念，在实际应用中经常使用
+- 一般知识（1.0）：补充内容、扩展知识，有助于完善知识体系
+- 辅助知识（0.8）：背景信息、参考资料，了解即可
+
+**知识类型分类**：
+- 理论知识：概念、原理、定律等抽象知识
+- 实践技能：操作、应用、实现等具体技能
+- 记忆性知识：事实、数据、术语等需要记忆的知识
+- 理解性知识：原理、逻辑、关系等需要理解的知识
+
+**请按以下JSON格式返回评估结果**：
+```json
+{
+  "difficulty_level": "beginner|intermediate|advanced|expert",
+  "difficulty_coefficient": 1.0,
+  "importance_level": "auxiliary|general|important|core", 
+  "importance_coefficient": 1.0,
+  "knowledge_type": "theoretical|practical|memory|understanding",
+  "knowledge_type_coefficient": 1.0,
+  "reasoning": "详细说明评估理由，包括难度判断依据、重要性分析、知识类型特征等",
+  "learning_suggestions": "针对该知识点的学习建议和方法"
+}
+```
+
+**注意事项**：
+1. 评估要客观公正，基于教育学和认知科学原理
+2. 考虑知识点在整个学科体系中的地位
+3. 结合实际应用场景和就业市场需求
+4. 提供具体的评估理由和学习建议
+```
+
+### 3.2 学习质量评估Prompt
+
+```
+你是一个专业的学习效果评估专家，擅长分析用户的学习行为和成果质量。请根据以下信息，评估用户的学习完成质量：
+
+**任务**：评估学习完成质量，确定完成质量系数
+
+**学习活动信息**：
+- 知识点名称：{knowledge_point_name}
+- 学习方式：{learning_method}
+- 学习时长：{study_duration}分钟
+- 完成分数：{completion_score}分（满分100分）
+- 学习内容：{learning_content}
+- 用户答题记录：{answer_records}
+- 学习行为数据：{behavior_data}
+
+**用户背景信息**：
+- 用户等级：{user_level}
+- 相关知识基础：{knowledge_background}
+- 历史学习表现：{historical_performance}
+- 学习偏好：{learning_preferences}
+
+**评估维度**：
+1. **理解深度**：是否真正理解概念本质
+2. **应用能力**：能否将知识应用到实际场景
+3. **学习效率**：单位时间内的学习成果
+4. **知识连接**：能否与已有知识建立联系
+5. **创新思考**：是否有独特见解或创新应用
+
+**完成质量系数分级**：
+- 优秀（1.2）：90-100分，深度理解，能创新应用
+- 良好（1.0）：80-89分，基本掌握，能正确应用
+- 及格（0.8）：60-79分，部分理解，应用有限
+- 不及格（0.5）：60分以下，理解不足，需要重学
+
+**请按以下JSON格式返回评估结果**：
+```json
+{
+  "quality_level": "excellent|good|pass|fail",
+  "quality_coefficient": 1.0,
+  "understanding_depth": 85,
+  "application_ability": 78,
+  "learning_efficiency": 92,
+  "knowledge_connection": 80,
+  "innovative_thinking": 75,
+  "detailed_analysis": "详细分析用户在各个维度的表现，指出优势和不足",
+  "improvement_suggestions": "针对性的改进建议，帮助用户提升学习质量",
+  "next_learning_path": "推荐的下一步学习方向和内容"
+}
+```
+
+**注意事项**：
+1. 综合考虑分数和学习过程表现
+2. 关注学习的深度而非仅仅是速度
+3. 考虑用户的个人背景和基础水平
+4. 提供建设性的改进建议
+```
+
+### 3.3 个性化参数调整Prompt
+
+```
+你是一个专业的个性化学习专家，擅长根据用户特征调整学习参数。请根据以下用户数据，确定个性化调整参数：
+
+**任务**：分析用户学习特征，确定个性化调整系数
+
+**用户学习数据**：
+- 用户ID：{user_id}
+- 学习历史：{learning_history}
+- 平均学习时长：{avg_study_duration}
+- 知识保持率：{knowledge_retention_rate}
+- 复习频率：{review_frequency}
+- 学习偏好时间：{preferred_study_time}
+- 擅长学习方式：{preferred_learning_methods}
+
+**认知能力评估**：
+- 记忆能力：{memory_ability}
+- 理解能力：{comprehension_ability}
+- 应用能力：{application_ability}
+- 学习速度：{learning_speed}
+- 注意力持续时间：{attention_span}
+
+**学习行为模式**：
+- 学习连续性：{learning_consistency}
+- 主动性：{learning_initiative}
+- 社交学习倾向：{social_learning_tendency}
+- 挑战接受度：{challenge_acceptance}
+
+**个性化参数说明**：
+
+**学习能力系数**：
+- 快速学习者（1.3）：学习速度快，理解能力强，记忆保持好
+- 普通学习者（1.0）：学习能力中等，按标准速度进步
+- 需要更多练习者（0.8）：需要更多时间和练习来掌握知识
+
+**记忆稳定性调整**：
+- 记忆力强（1.4）：遗忘速度慢，知识保持时间长
+- 记忆力中等（1.0）：标准遗忘曲线
+- 记忆力弱（0.7）：遗忘速度快，需要更频繁复习
+
+**学习偏好权重**：
+- 视觉学习者：图表、图像、视频权重+20%
+- 听觉学习者：音频、讲解、讨论权重+20%
+- 动手学习者：实践、操作、实验权重+20%
+- 阅读学习者：文本、书籍、文档权重+20%
+
+**请按以下JSON格式返回评估结果**：
+```json
+{
+  "learning_ability_factor": 1.0,
+  "memory_stability_factor": 1.0,
+  "learning_style_weights": {
+    "visual": 1.0,
+    "auditory": 1.0,
+    "kinesthetic": 1.0,
+    "reading": 1.0
+  },
+  "optimal_study_duration": 45,
+  "recommended_review_intervals": [0.5, 1, 3, 7, 15, 30],
+  "personalized_suggestions": "基于用户特征的个性化学习建议",
+  "learning_path_optimization": "学习路径优化建议",
+  "motivation_strategies": "针对该用户的激励策略建议"
+}
+```
+
+**注意事项**：
+1. 基于科学的学习理论和认知科学研究
+2. 考虑用户的长期学习目标和短期需求
+3. 平衡挑战性和可达成性
+4. 提供具体可操作的建议
+```
+
+### 3.4 智慧值综合计算Prompt
+
+```
+你是一个专业的学习成果量化专家，擅长综合各种因素计算学习智慧值。请根据以下信息，计算最终的智慧值：
+
+**任务**：综合所有参数，计算最终智慧值并提供详细分析
+
+**基础参数**：
+- 知识点难度系数：{difficulty_coefficient}
+- 重要性系数：{importance_coefficient}
+- 完成质量系数：{quality_coefficient}
+- 学习方式系数：{learning_method_coefficient}
+
+**个性化参数**：
+- 学习能力系数：{learning_ability_factor}
+- 知识类型系数：{knowledge_type_factor}
+- 用户等级调整：{user_level_adjustment}
+
+**时间相关参数**：
+- 学习时长：{study_duration}分钟
+- 距离上次学习时间：{time_since_last_study}小时
+- 当前记忆保持率：{current_retention_rate}
+
+**奖励参数**：
+- 连续学习天数奖励：{continuous_days_bonus}
+- 学习强度奖励：{intensity_bonus}
+- 社交学习奖励：{social_learning_bonus}
+- 创新应用奖励：{innovation_bonus}
+
+**计算公式**：
+```
+基础智慧值 = 难度系数 × 重要性系数 × 完成质量系数 × 学习方式系数
+个性化调整 = 基础智慧值 × 学习能力系数 × 知识类型系数 × 用户等级调整
+最终智慧值 = 个性化调整 × (1 + 各项奖励系数之和)
+```
+
+**请按以下JSON格式返回计算结果**：
+```json
+{
+  "base_wisdom_value": 120.5,
+  "personalized_wisdom_value": 135.8,
+  "final_wisdom_value": 156.2,
+  "calculation_breakdown": {
+    "difficulty_contribution": 30.0,
+    "importance_contribution": 45.0,
+    "quality_contribution": 25.5,
+    "learning_method_contribution": 20.0,
+    "personalization_adjustment": 15.3,
+    "bonus_contributions": {
+      "continuous_days": 8.5,
+      "intensity": 5.2,
+      "social_learning": 3.1,
+      "innovation": 7.9
+    }
+  },
+  "wisdom_level_assessment": "该智慧值在用户当前等级中的位置评估",
+  "growth_analysis": "与用户历史智慧值的对比分析",
+  "optimization_suggestions": "进一步提升智慧值的建议",
+  "next_milestone": "下一个智慧值里程碑和达成建议"
+}
+```
+
+**注意事项**：
+1. 确保计算逻辑的一致性和公平性
+2. 考虑智慧值的激励作用和教育意义
+3. 提供透明的计算过程和合理的解释
+4. 关注用户的长期学习动机和成长
+```
+
+## 4. API调用参数结构
+
+### 4.1 知识点分析参数
+```json
+{
+  "knowledge_point_name": "JavaScript基础语法",
+  "subject_area": "前端开发",
+  "knowledge_description": "JavaScript的基本语法规则，包括变量声明、数据类型、运算符、控制结构等",
+  "content_type": "理论+实践",
+  "prerequisites": ["HTML基础", "编程思维"],
+  "application_scenarios": ["网页交互", "前端开发", "Web应用"]
+}
+```
+
+### 4.2 学习质量评估参数
+```json
+{
+  "knowledge_point_name": "JavaScript基础语法",
+  "learning_method": "视频学习+编程练习",
+  "study_duration": 45,
+  "completion_score": 85,
+  "learning_content": "变量声明、数据类型、条件语句、循环语句",
+  "answer_records": [
+    {"question": "变量声明方式", "answer": "let, const, var", "correct": true},
+    {"question": "数据类型判断", "answer": "typeof", "correct": true}
+  ],
+  "behavior_data": {
+    "pause_count": 3,
+    "replay_count": 1,
+    "practice_attempts": 5,
+    "help_requests": 2
+  },
+  "user_level": "beginner",
+  "knowledge_background": ["HTML基础"],
+  "historical_performance": 78.5,
+  "learning_preferences": ["visual", "hands-on"]
+}
+```
+
+### 4.3 个性化参数调整参数
+```json
+{
+  "user_id": 12345,
+  "learning_history": {
+    "total_study_time": 1200,
+    "completed_courses": 15,
+    "average_score": 82.3,
+    "preferred_subjects": ["前端开发", "数据分析"]
+  },
+  "avg_study_duration": 38,
+  "knowledge_retention_rate": 0.75,
+  "review_frequency": 0.6,
+  "preferred_study_time": ["morning", "evening"],
+  "preferred_learning_methods": ["video", "practice", "reading"],
+  "memory_ability": 85,
+  "comprehension_ability": 78,
+  "application_ability": 82,
+  "learning_speed": 90,
+  "attention_span": 45,
+  "learning_consistency": 0.8,
+  "learning_initiative": 0.7,
+  "social_learning_tendency": 0.6,
+  "challenge_acceptance": 0.85
+}
+```
+
+### 4.4 智慧值综合计算参数
+```json
+{
+  "difficulty_coefficient": 1.5,
+  "importance_coefficient": 2.0,
+  "quality_coefficient": 1.0,
+  "learning_method_coefficient": 1.2,
+  "learning_ability_factor": 1.1,
+  "knowledge_type_factor": 1.0,
+  "user_level_adjustment": 1.0,
+  "study_duration": 45,
+  "time_since_last_study": 24,
+  "current_retention_rate": 0.85,
+  "continuous_days_bonus": 0.15,
+  "intensity_bonus": 0.10,
+  "social_learning_bonus": 0.05,
+  "innovation_bonus": 0.12
+}
+```
+
+## 5. API调用流程
+
+### 5.1 完整调用流程
+```
+1. 知识点分析 → 获得难度系数、重要性系数、知识类型系数
+2. 学习质量评估 → 获得完成质量系数
+3. 个性化参数调整 → 获得学习能力系数等个性化参数
+4. 智慧值综合计算 → 获得最终智慧值和详细分析
+```
+
+### 5.2 缓存策略
+- 知识点分析结果可缓存7天（知识点特征相对稳定）
+- 个性化参数可缓存3天（用户特征变化较慢）
+- 学习质量评估和智慧值计算实时进行
+
+### 5.3 错误处理
+- API调用失败时使用默认参数值
+- 提供降级方案，确保系统正常运行
+- 记录调用日志，便于问题排查和优化
+
+## 6. 性能优化建议
+
+### 6.1 批量处理
+- 支持批量知识点分析，提高效率
+- 合并相似的API调用请求
+- 使用异步处理，避免阻塞用户操作
+
+### 6.2 智能缓存
+- 基于知识点特征的智能缓存策略
+- 用户个性化参数的渐进式更新
+- 热点数据预加载机制
+
+### 6.3 成本控制
+- 设置API调用频率限制
+- 优先级队列处理重要请求
+- 监控API使用量和成本
+
+## 7. 质量保证
+
+### 7.1 结果验证
+- 设置合理的参数范围检查
+- 对异常结果进行人工审核
+- 建立反馈机制，持续优化prompt
+
+### 7.2 A/B测试
+- 对比不同prompt版本的效果
+- 测试参数调整对学习效果的影响
+- 收集用户反馈，优化算法
+
+### 7.3 监控指标
+- API调用成功率
+- 响应时间
+- 结果准确性
+- 用户满意度
+
+通过以上设计，我们可以充分利用大语言模型的能力，实现智能化、个性化的智慧值计算系统，为用户提供更科学、更有效的学习激励机制。

@@ -1,0 +1,56 @@
+server:
+  port: 8080
+spring:
+  # MongoDB配置
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: enjoy_learning
+      # 移除认证信息，因为本地MongoDB不需要验证
+      # username: root
+      # password: 123456
+      # authentication-database: admin
+  # Redis配置
+  redis:
+    host: localhost
+    port: 6379
+    password: 123456
+    database: 0
+    timeout: 10000
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+  jackson:
+    # 将 date 序列化为时间字符串的格式
+    date-format: yyyy-MM-dd HH:mm:ss
+    # 序列化 date 采用的时区
+    time-zone: Asia/Shanghai
+    serialization:
+      # 是否将 Java date 类型序列化为时间戳
+      write-dates-as-timestamps: false
+mybatis:
+  # mapper 文件的位置
+  mapperLocations: classpath:mapper/*.xml
+  configuration:
+    # 在日志中打印执行的 SQL 语句
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+logging:
+  level:
+    root: info
+
+# JWT配置
+jwt:
+  secret: "enjoy-learning-project-secret-key-2025-05-24"
+
+# AI模型配置
+ai:
+  model:
+    api:
+      url: ""
+      key: ""  # 实际部署时需要配置有效的API密钥
+    name: "Qwen3-32B"
+#    name: "DeepSeek-R1"

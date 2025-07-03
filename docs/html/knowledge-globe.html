@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识球 - 快乐学习</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: var(--bg-white);
+            perspective: 1000px;
+        }
+        
+        .globe-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .knowledge-globe {
+            width: 300px;
+            height: 300px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+        
+        /* 知识点样式 */
+        .knowledge-node {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid var(--globe-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            transform-style: preserve-3d;
+            backface-visibility: visible;
+            font-size: 12px;
+            text-align: center;
+            user-select: none;
+        }
+        
+        .knowledge-node:hover {
+            transform: scale(1.1) translateZ(20px);
+            box-shadow: var(--shadow-lg);
+            z-index: 10;
+        }
+        
+        .knowledge-node.mastered {
+            border-color: var(--success-color);
+        }
+        
+        .knowledge-node.learning {
+            border-color: var(--primary-color);
+        }
+        
+        .knowledge-node.new {
+            border-color: var(--globe-color);
+        }
+        
+        /* 连接线样式 */
+        .connection {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.2);
+            transform-style: preserve-3d;
+            transform-origin: 0 0;
+        }
+        
+        /* 球体控制面板 */
+        .globe-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: white;
+            border: none;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .view-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        /* 知识点详情弹窗 */
+        .node-detail {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+        
+        .node-detail.show {
+            transform: translateY(0);
+        }
+        
+        .drag-handle {
+            width: 40px;
+            height: 5px;
+            background-color: var(--border-color);
+            border-radius: 3px;
+            margin: 0 auto 15px;
+        }
+        
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .detail-close {
+            width: 36px;
+            height: 36px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .navbar {
+            height: 56px;
+            background-color: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 10;
+        }
+        
+        .bottom-nav {
+            height: 56px;
+            background-color: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 10;
+        }
+        
+        /* 背景星星效果 */
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.5;
+        }
+        
+        /* 球体辅助线 */
+        .globe-grid {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 1px solid rgba(156, 39, 176, 0.3);
+            transform-style: preserve-3d;
+        }
+        
+        .grid-circle-x {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1px solid rgba(156, 39, 176, 0.15);
+            transform-style: preserve-3d;
+        }
+        
+        .grid-circle-y {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1px solid rgba(156, 39, 176, 0.15);
+            transform: rotateY(90deg);
+            transform-style: preserve-3d;
+        }
+        
+        .grid-circle-z {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1px solid rgba(156, 39, 176, 0.15);
+            transform: rotateX(90deg);
+            transform-style: preserve-3d;
+        }
+
+        /* 视图切换菜单 */
+        .view-switch-menu {
+            position: absolute;
+            top: 56px;
+            right: 16px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            z-index: 100;
+            overflow: hidden;
+            display: none;
+        }
+
+        .view-switch-menu.show {
+            display: block;
+        }
+
+        .view-option {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .view-option:hover {
+            background-color: var(--bg-gray);
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+        <div class="navbar-title">知识球</div>
+        <div class="navbar-actions">
+            <button class="btn btn-sm btn-outline" id="viewSwitchBtn">视图切换</button>
+        </div>
+    </div>
+    
+    <!-- 视图切换菜单 -->
+    <div class="view-switch-menu" id="viewSwitchMenu">
+        <div class="view-option" data-view="map">
+            <span>🌍</span>
+            <span>知识地图</span>
+        </div>
+        <div class="view-option" data-view="tree">
+            <span>🌳</span>
+            <span>知识树</span>
+        </div>
+        <div class="view-option" data-view="globe">
+            <span>🔮</span>
+            <span>知识球</span>
+        </div>
+    </div>
+    
+    <!-- 球体区域 -->
+    <div class="globe-container" id="globeContainer">
+        <!-- 背景星星 -->
+        <div id="stars"></div>
+        
+        <!-- 知识球 -->
+        <div class="knowledge-globe" id="knowledgeGlobe">
+            <!-- 球体网格辅助线 -->
+            <div class="globe-grid"></div>
+            <div class="grid-circle-x" style="transform: rotateX(30deg);"></div>
+            <div class="grid-circle-x" style="transform: rotateX(60deg);"></div>
+            <div class="grid-circle-y" style="transform: rotateY(30deg);"></div>
+            <div class="grid-circle-y" style="transform: rotateY(60deg);"></div>
+            <div class="grid-circle-z" style="transform: rotateZ(30deg);"></div>
+            <div class="grid-circle-z" style="transform: rotateZ(60deg);"></div>
+            
+            <!-- 知识节点将通过JS动态生成 -->
+        </div>
+
+        <!-- 视图控制按钮 -->
+        <div class="view-controls">
+            <button class="btn btn-sm" data-view="2d">2D视图</button>
+            <button class="btn btn-sm btn-primary" data-view="3d">3D视图</button>
+        </div>
+        
+        <!-- 球体控制按钮 -->
+        <div class="globe-controls">
+            <button class="control-btn zoom-in">+</button>
+            <button class="control-btn zoom-out">-</button>
+            <button class="control-btn reset">↺</button>
+        </div>
+    </div>
+    
+    <!-- 知识点详情弹窗 -->
+    <div class="node-detail" id="nodeDetail">
+        <div class="drag-handle"></div>
+        <div class="node-header">
+            <h2>数据结构</h2>
+            <button class="detail-close">×</button>
+        </div>
+        <p>数据结构是计算机存储、组织数据的方式，是指相互之间存在一种或多种特定关系的数据元素的集合。</p>
+        
+        <div class="progress-box">
+            <h4>学习进度</h4>
+            <div class="progress mt-8">
+                <div class="progress-bar" style="width: 45%;"></div>
+            </div>
+            <p class="text-sm mt-8">智慧值：45/100</p>
+        </div>
+        
+        <p class="text-sm">相关知识点：算法、程序设计、计算机科学</p>
+        
+        <div class="action-buttons">
+            <button class="btn btn-primary">复习</button>
+            <button class="btn btn-outline">笔记</button>
+            <button class="btn btn-outline">探索</button>
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <a href="knowledge-map.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">🌍</div>
+            <div>知识地图</div>
+        </a>
+        <a href="review.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">📝</div>
+            <div>复习</div>
+        </a>
+        <a href="community.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👥</div>
+            <div>社区</div>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👤</div>
+            <div>我的</div>
+        </a>
+    </div>
+
+    <script>
+        // 知识球交互逻辑
+        const globeContainer = document.getElementById('globeContainer');
+        const knowledgeGlobe = document.getElementById('knowledgeGlobe');
+        const nodeDetail = document.getElementById('nodeDetail');
+        const detailClose = document.querySelector('.detail-close');
+        const viewSwitchBtn = document.getElementById('viewSwitchBtn');
+        const viewSwitchMenu = document.getElementById('viewSwitchMenu');
+        
+        // 初始位置和缩放
+        let scale = 1;
+        let rotateX = 15; // 初始倾斜角度
+        let rotateY = 30; // 初始旋转角度
+        let isDragging = false;
+        let startX, startY, startRotateX, startRotateY;
+        
+        // 创建随机星星背景
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const containerRect = globeContainer.getBoundingClientRect();
+            
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = `${Math.random() * containerRect.width}px`;
+                star.style.top = `${Math.random() * containerRect.height}px`;
+                
+                // 随机大小
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                
+                // 随机透明度
+                star.style.opacity = Math.random() * 0.8 + 0.2;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 生成知识节点数据
+        const knowledgeNodes = [
+            { id: 1, name: '算法', category: 'mastered', x: 0, y: 0, z: 150 },
+            { id: 2, name: '数据结构', category: 'learning', x: 120, y: 50, z: 80 },
+            { id: 3, name: '编程语言', category: 'mastered', x: -100, y: 80, z: 50 },
+            { id: 4, name: '计算机网络', category: 'new', x: 50, y: -120, z: 50 },
+            { id: 5, name: '操作系统', category: 'learning', x: -50, y: 30, z: -130 },
+            { id: 6, name: '数据库', category: 'new', x: 120, y: -40, z: -80 },
+            { id: 7, name: '软件工程', category: 'mastered', x: -120, y: -70, z: -50 },
+            { id: 8, name: '人工智能', category: 'learning', x: 0, y: 140, z: -50 },
+            { id: 9, name: '机器学习', category: 'new', x: 80, y: 80, z: -90 },
+            { id: 10, name: '深度学习', category: 'learning', x: -80, y: -50, z: 100 },
+            { id: 11, name: '大数据', category: 'new', x: 40, y: -90, z: -120 },
+            { id: 12, name: '云计算', category: 'mastered', x: -60, y: -100, z: -70 },
+            { id: 13, name: '网络安全', category: 'learning', x: 90, y: -30, z: 110 },
+            { id: 14, name: '物联网', category: 'new', x: -110, y: 60, z: -90 },
+            { id: 15, name: '区块链', category: 'new', x: 70, y: 100, z: 60 },
+        ];
+        
+        // 创建知识节点
+        function createKnowledgeNodes() {
+            knowledgeNodes.forEach(node => {
+                const element = document.createElement('div');
+                element.className = `knowledge-node ${node.category}`;
+                element.textContent = node.name;
+                element.dataset.id = node.id;
+                
+                // 设置3D位置
+                element.style.transform = `translate3d(${node.x}px, ${node.y}px, ${node.z}px)`;
+                
+                // 点击事件
+                element.addEventListener('click', () => {
+                    // 更新详情面板内容
+                    document.querySelector('.node-detail h2').textContent = node.name;
+                    
+                    // 根据节点类别设置不同的信息
+                    let progress = 0;
+                    let description = '';
+                    
+                    switch(node.category) {
+                        case 'mastered':
+                            progress = 90 + Math.floor(Math.random() * 10);
+                            description = `${node.name}是计算机科学中的重要领域，您已经掌握了该领域的核心知识。`;
+                            break;
+                        case 'learning':
+                            progress = 30 + Math.floor(Math.random() * 60);
+                            description = `${node.name}包含多个子领域和复杂概念，您正在积极学习这些内容。`;
+                            break;
+                        case 'new':
+                            progress = Math.floor(Math.random() * 10);
+                            description = `${node.name}是一个值得探索的领域，开始学习将为您打开新世界的大门。`;
+                            break;
+                        default:
+                            description = `${node.name}是计算机科学的一个分支。`;
+                    }
+                    
+                    document.querySelector('.node-detail p').textContent = description;
+                    document.querySelector('.progress-bar').style.width = `${progress}%`;
+                    document.querySelector('.progress-box .text-sm').textContent = `智慧值：${progress}/100`;
+                    
+                    nodeDetail.classList.add('show');
+                });
+                
+                knowledgeGlobe.appendChild(element);
+            });
+            
+            // 创建连接线
+            createConnections();
+        }
+        
+        // 创建节点间的连接线
+        function createConnections() {
+            const connections = [
+                {source: 1, target: 2},
+                {source: 1, target: 7},
+                {source: 2, target: 6},
+                {source: 3, target: 1},
+                {source: 3, target: 7},
+                {source: 4, target: 5},
+                {source: 5, target: 6},
+                {source: 7, target: 6},
+                {source: 8, target: 9},
+                {source: 9, target: 10},
+                {source: 6, target: 11},
+                {source: 5, target: 12},
+                {source: 4, target: 13},
+                {source: 12, target: 14},
+                {source: 11, target: 15}
+            ];
+            
+            connections.forEach(conn => {
+                const sourceNode = knowledgeNodes.find(node => node.id === conn.source);
+                const targetNode = knowledgeNodes.find(node => node.id === conn.target);
+                
+                if (sourceNode && targetNode) {
+                    const line = document.createElement('div');
+                    line.className = 'connection';
+                    
+                    // 计算线的位置和长度
+                    const length = Math.sqrt(
+                        Math.pow(targetNode.x - sourceNode.x, 2) +
+                        Math.pow(targetNode.y - sourceNode.y, 2) +
+                        Math.pow(targetNode.z - sourceNode.z, 2)
+                    );
+                    
+                    // 设置位置和变换
+                    line.style.width = `${length}px`;
+                    line.style.height = '2px';
+                    line.style.top = `${sourceNode.y}px`;
+                    line.style.left = `${sourceNode.x}px`;
+                    
+                    // 计算旋转角度
+                    const dx = targetNode.x - sourceNode.x;
+                    const dy = targetNode.y - sourceNode.y;
+                    const dz = targetNode.z - sourceNode.z;
+                    
+                    // 在XY平面的旋转角度
+                    const angleXY = Math.atan2(dy, dx) * 180 / Math.PI;
+                    
+                    // Z方向的旋转（需要更复杂的3D变换）
+                    const angleZ = Math.atan2(dz, Math.sqrt(dx*dx + dy*dy)) * 180 / Math.PI;
+                    
+                    line.style.transform = `rotateZ(${angleXY}deg) rotateY(${angleZ}deg)`;
+                    
+                    knowledgeGlobe.appendChild(line);
+                }
+            });
+        }
+        
+        // 更新球体变换
+        function updateGlobeTransform() {
+            knowledgeGlobe.style.transform = `scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        }
+        
+        // 控制按钮事件
+        document.querySelector('.zoom-in').addEventListener('click', () => {
+            scale = Math.min(scale * 1.2, 2);
+            updateGlobeTransform();
+        });
+        
+        document.querySelector('.zoom-out').addEventListener('click', () => {
+            scale = Math.max(scale / 1.2, 0.5);
+            updateGlobeTransform();
+        });
+        
+        document.querySelector('.reset').addEventListener('click', () => {
+            scale = 1;
+            rotateX = 15;
+            rotateY = 30;
+            updateGlobeTransform();
+        });
+        
+        // 球体拖动旋转
+        globeContainer.addEventListener('mousedown', startDrag);
+        globeContainer.addEventListener('touchstart', handleTouchStart);
+        globeContainer.addEventListener('mousemove', drag);
+        globeContainer.addEventListener('touchmove', handleTouchMove);
+        globeContainer.addEventListener('mouseup', endDrag);
+        globeContainer.addEventListener('mouseleave', endDrag);
+        globeContainer.addEventListener('touchend', endDrag);
+        
+        function startDrag(e) {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startRotateX = rotateX;
+            startRotateY = rotateY;
+        }
+        
+        function handleTouchStart(e) {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                startRotateX = rotateX;
+                startRotateY = rotateY;
+            }
+        }
+        
+        function drag(e) {
+            if (!isDragging) return;
+            
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            // 使旋转速度适中
+            rotateY = startRotateY + dx * 0.5;
+            rotateX = startRotateX + dy * 0.5;
+            
+            updateGlobeTransform();
+        }
+        
+        function handleTouchMove(e) {
+            if (!isDragging || e.touches.length !== 1) return;
+            e.preventDefault();
+            
+            const dx = e.touches[0].clientX - startX;
+            const dy = e.touches[0].clientY - startY;
+            
+            rotateY = startRotateY + dx * 0.5;
+            rotateX = startRotateX + dy * 0.5;
+            
+            updateGlobeTransform();
+        }
+        
+        function endDrag() {
+            isDragging = false;
+        }
+        
+        // 视图切换
+        const viewButtons = document.querySelectorAll('.view-controls .btn');
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                
+                viewButtons.forEach(b => {
+                    b.classList.remove('btn-primary');
+                });
+                btn.classList.add('btn-primary');
+                
+                if (view === '2d') {
+                    // 切换到2D平面视图
+                    knowledgeGlobe.style.transform = 'scale(0.9) rotateX(0) rotateY(0)';
+                    
+                    // 重新排列知识点
+                    const nodes = document.querySelectorAll('.knowledge-node');
+                    nodes.forEach((node, i) => {
+                        const angle = (i / nodes.length) * Math.PI * 2;
+                        const radius = 120;
+                        const x = Math.cos(angle) * radius;
+                        const y = Math.sin(angle) * radius;
+                        node.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                    });
+                } else {
+                    // 恢复到3D视图
+                    updateGlobeTransform();
+                    
+                    // 恢复知识点原始位置
+                    const nodes = document.querySelectorAll('.knowledge-node');
+                    nodes.forEach((node, i) => {
+                        const data = knowledgeNodes[i];
+                        node.style.transform = `translate3d(${data.x}px, ${data.y}px, ${data.z}px)`;
+                    });
+                }
+            });
+        });
+
+        // 视图切换功能
+        viewSwitchBtn.addEventListener('click', () => {
+            viewSwitchMenu.classList.toggle('show');
+        });
+
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!viewSwitchBtn.contains(e.target) && !viewSwitchMenu.contains(e.target)) {
+                viewSwitchMenu.classList.remove('show');
+            }
+        });
+
+        // 处理视图切换
+        document.querySelectorAll('.view-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const view = option.dataset.view;
+                
+                if (view === 'tree') {
+                    window.location.href = 'knowledge-tree.html';
+                } else if (view === 'map') {
+                    window.location.href = 'knowledge-map.html';
+                }
+                
+                viewSwitchMenu.classList.remove('show');
+            });
+        });
+        
+        // 关闭详情面板
+        detailClose.addEventListener('click', () => {
+            nodeDetail.classList.remove('show');
+        });
+        
+        // 初始化
+        window.addEventListener('load', () => {
+            createStars();
+            createKnowledgeNodes();
+            updateGlobeTransform(); // 确保初始化时应用变换
+        });
+    </script>
+</body>
+</html> 

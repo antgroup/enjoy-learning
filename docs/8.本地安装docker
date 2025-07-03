@@ -1,0 +1,129 @@
+# macOS 安装 Docker（命令行版）
+
+本文档记录了在 macOS 上通过命令行安装 Docker 的步骤，不使用 Docker Desktop。
+
+## 系统环境
+- macOS Ventura 13.2.1
+- Apple Silicon (ARM64)
+
+## 安装步骤
+
+### 1. 安装 Homebrew（如已安装可跳过）
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### 2. 使用 Homebrew 安装 Docker CLI 和 Docker Engine
+
+```bash
+brew install docker
+brew install docker-compose
+```
+
+### 3. 安装并配置 Colima（作为 Docker 运行时替代方案）
+
+Colima 是一个适用于 macOS 的轻量级 Docker 容器运行时，可以替代 Docker Desktop。
+
+```bash
+brew install colima
+```
+
+### 4. 启动 Colima
+
+```bash
+colima start
+```
+
+### 5. 验证 Docker 安装
+
+```bash
+docker --version
+docker-compose --version
+docker info
+```
+
+## 安装结果
+
+Docker 和 Colima 已经成功安装，Docker 守护进程能够正常启动。但在尝试拉取镜像或运行容器时遇到了网络连接问题：
+
+```
+Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+```
+
+### 网络问题分析
+
+
+--- registry-1.docker.io ping statistics ---
+3 packets transmitted, 0 packets received, 100.0% packet loss
+```
+
+### 解决方法
+
+1. 尝试配置镜像加速，但仍然存在网络问题：
+   - 已尝试配置 Docker 配置文件：`~/.docker/config.json`
+   - 添加了国内镜像源：Docker中国、阿里云、网易等
+
+2. 可能的解决方案：
+   - 检查网络环境，可能需要配置代理
+   - 验证是否有防火墙限制
+   - 尝试使用VPN或其他网络环境
+
+## 常见问题及解决方案
+
+### 问题1: Docker 命令需要 sudo 权限
+
+解决方案：
+```bash
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+### 问题2: 端口绑定冲突
+
+解决方案：
+```bash
+# 查看占用端口的进程
+lsof -i :<端口号>
+# 停止占用的进程
+kill <进程ID>
+```
+
+### 问题3: Colima 启动失败
+
+解决方案：
+```bash
+# 重置 Colima
+colima delete
+colima start
+```
+
+## Docker 基本使用
+
+### 拉取镜像
+```bash
+docker pull <镜像名称>:<标签>
+```
+
+### 运行容器
+```bash
+docker run -d -p <主机端口>:<容器端口> --name <容器名称> <镜像名称>:<标签>
+```
+
+### 查看容器
+```bash
+docker ps  # 查看运行的容器
+docker ps -a  # 查看所有容器
+```
+
+### 停止和删除容器
+```bash
+docker stop <容器ID或名称>
+docker rm <容器ID或名称>
+```
+
+### 进入容器
+```bash
+docker exec -it <容器ID或名称> /bin/bash
+```

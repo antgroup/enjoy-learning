@@ -1,0 +1,397 @@
+/* 知识地图容器样式 */
+.knowledge-map-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--bg-white, #ffffff);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* 地图容器 */
+.map-container {
+  width: 100%;
+  height: calc(100vh - 126px);
+  position: relative;
+  background-color: #f8f9fa;
+  overflow: hidden;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* echarts图表容器 */
+.knowledge-map-chart {
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #f8f9fa;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 控制面板 */
+.map-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+}
+
+.control-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: white;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333;
+}
+
+.control-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  background-color: #f5f5f5;
+}
+
+.control-btn:active {
+  transform: scale(0.95);
+}
+
+/* 弹出层详情 */
+.node-detail {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-width: 100vw;
+  background-color: white;
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  z-index: 100;
+  box-sizing: border-box;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.node-detail.show {
+  transform: translateY(0);
+}
+
+.drag-handle {
+  width: 40px;
+  height: 5px;
+  background-color: var(--border-color, #e0e0e0);
+  border-radius: 3px;
+  margin: 0 auto 15px;
+}
+
+.node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.node-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.detail-close {
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.detail-close:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.progress-box {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: var(--bg-gray, #f5f5f5);
+  border-radius: 10px;
+}
+
+.progress-box h4 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.progress {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--primary-color, #1e88e5);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.text-sm {
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+}
+
+/* 节点详情信息 */
+.node-details-info {
+  margin: 16px 0;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #666;
+  font-size: 14px;
+}
+
+.info-value {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+/* 关键词标签 */
+.node-keywords {
+  margin: 16px 0;
+}
+
+.keywords-label {
+  font-weight: 500;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.keyword-tag {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 80px;
+}
+
+.btn-primary {
+  background-color: var(--primary-color, #1e88e5);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1976d2;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--border-color, #e0e0e0);
+  color: var(--text-dark, #333);
+}
+
+.btn-outline:hover {
+  background-color: var(--bg-gray, #f5f5f5);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .map-container {
+    height: calc(100vh - 120px);
+  }
+  
+  .map-controls {
+    bottom: 10px;
+    right: 10px;
+  }
+  
+  .control-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .node-detail {
+    padding: 16px;
+    max-height: 80vh;
+  }
+  
+  .node-header h2 {
+    font-size: 18px;
+  }
+  
+  .action-buttons {
+    gap: 8px;
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-container {
+    height: calc(100vh - 100px);
+  }
+  
+  .control-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .node-detail {
+    padding: 12px;
+    border-radius: 16px 16px 0 0;
+  }
+  
+  .node-header h2 {
+    font-size: 16px;
+  }
+  
+  .detail-close {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
+  
+  .progress-box {
+    padding: 12px;
+  }
+  
+  .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: 60px;
+  }
+  
+  .info-item {
+    padding: 6px 0;
+  }
+  
+  .info-label,
+  .info-value {
+    font-size: 13px;
+  }
+  
+  .keyword-tag {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+}
+
+/* 确保echarts图表在所有设备上都能正确显示 */
+@media (orientation: landscape) and (max-height: 600px) {
+  .map-container {
+    height: calc(100vh - 80px);
+  }
+  
+  .node-detail {
+    max-height: 60vh;
+  }
+}
+
+/* 高分辨率屏幕优化 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .control-btn {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .node-detail {
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+  }
+}

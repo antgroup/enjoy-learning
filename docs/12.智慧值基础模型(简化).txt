@@ -1,0 +1,239 @@
+# 智慧值基础模型(简化版) - 大语言模型API调用方案
+
+## 1. 概述
+
+本期智慧值系统采用简化模型，通过调用外部大语言模型API来分析知识点特征并计算基础智慧值。去除了复杂的个性化参数、学习行为分析和奖励机制，专注于核心的知识点评估和智慧值计算。
+
+## 2. 简化设计原则
+
+根据PRD第6点要求，本期智慧值模型简化如下：
+- **不考虑**：用户学习时长、答题记录、学习行为数据
+- **不提供**：学习建议、学习方向、个性化推荐
+- **不实现**：个性化参数调整逻辑
+- **不涉及**：奖励参数（连续学习、社交学习等）
+
+## 3. 统一Prompt模板
+
+### 3.1 智慧值计算Prompt
+
+```
+你是一个专业的教育评估专家，擅长分析学习内容并计算智慧值。请根据以下信息，对知识点进行评估并计算智慧值：
+
+**任务**：分析知识点特征，计算基础智慧值
+
+**知识点信息**：
+- 知识点名称：{knowledge_point_name}
+- 学科领域：{subject_area}
+- 知识点描述：{knowledge_description}
+- 学习内容类型：{content_type}
+- 学习方式：{learning_method}
+
+**评估标准**：
+
+**难度系数分级**：
+- 入门级（1.0）：基础概念、简单操作，无需复杂思维
+- 进阶级（1.5）：复杂概念、综合应用，需要一定理解能力
+- 高级（2.0）：深度理论、创新应用，需要较强分析能力
+- 专家级（2.5）：前沿技术、原创研究，需要专业深度思考
+
+**重要性系数分级**：
+- 核心知识（2.0）：学科基础、必备技能，对后续学习至关重要
+- 重要知识（1.5）：常用技能、重要概念，在实际应用中经常使用
+- 一般知识（1.0）：补充内容、扩展知识，有助于完善知识体系
+- 辅助知识（0.8）：背景信息、参考资料，了解即可
+
+**完成质量系数分级**：
+- 优秀（1.2）：90-100分，深度理解
+- 良好（1.0）：80-89分，基本掌握
+- 及格（0.8）：60-79分，部分理解
+- 不及格（0.5）：60分以下，需要重学
+
+**学习方式系数**：
+- 创作内容（1.5）：原创作品、项目实践
+- 实践操作（1.2）：动手实验、编程练习
+- 完成练习题（1.0）：标准练习、测试
+- 观看视频/阅读文章（0.8）：被动学习
+
+**知识类型系数**：
+- 理解性知识（1.2）：原理、逻辑、关系等需要理解的知识
+- 实践技能（1.1）：操作、应用、实现等具体技能
+- 理论知识（1.0）：概念、原理、定律等抽象知识
+- 记忆性知识（0.9）：事实、数据、术语等需要记忆的知识
+
+**计算公式**：
+```
+基础智慧值 = 难度系数 × 重要性系数 × 完成质量系数 × 学习方式系数 × 知识类型系数
+```
+
+**请按以下JSON格式返回计算结果**：
+```json
+{
+  "difficulty_level": "beginner|intermediate|advanced|expert",
+  "difficulty_coefficient": 1.0,
+  "importance_level": "auxiliary|general|important|core",
+  "importance_coefficient": 1.0,
+  "quality_level": "excellent|good|pass|fail",
+  "quality_coefficient": 1.0,
+  "learning_method_coefficient": 1.0,
+  "knowledge_type": "theoretical|practical|memory|understanding",
+  "knowledge_type_coefficient": 1.0,
+  "base_wisdom_value": 120.5,
+  "calculation_breakdown": {
+    "difficulty_contribution": "难度系数对智慧值的贡献",
+    "importance_contribution": "重要性系数对智慧值的贡献",
+    "quality_contribution": "完成质量系数对智慧值的贡献",
+    "learning_method_contribution": "学习方式系数对智慧值的贡献",
+    "knowledge_type_contribution": "知识类型系数对智慧值的贡献"
+  },
+  "evaluation_summary": "简要说明该知识点的特征和智慧值计算依据"
+}
+```
+
+**注意事项**：
+1. 评估要客观公正，基于教育学原理
+2. 考虑知识点在学科体系中的地位
+3. 根据完成分数合理评估质量系数
+4. 确保计算逻辑的一致性
+5. 不需要提供学习建议或个性化推荐
+```
+
+## 4. API调用参数结构
+
+### 4.1 输入参数
+```json
+{
+  "knowledge_point_name": "JavaScript基础语法",
+  "subject_area": "前端开发",
+  "knowledge_description": "JavaScript的基本语法规则，包括变量声明、数据类型、运算符、控制结构等",
+  "content_type": "理论+实践",
+  "learning_method": "practice"
+}
+```
+
+### 4.2 输出结果示例
+```json
+{
+  "difficulty_level": "intermediate",
+  "difficulty_coefficient": 1.5,
+  "importance_level": "core",
+  "importance_coefficient": 2.0,
+  "quality_level": "good",
+  "quality_coefficient": 1.0,
+  "learning_method_coefficient": 1.2,
+  "knowledge_type": "understanding",
+  "knowledge_type_coefficient": 1.2,
+  "base_wisdom_value": 432.0,
+  "calculation_breakdown": {
+    "difficulty_contribution": "中等难度，需要一定理解能力",
+    "importance_contribution": "前端开发核心基础，对后续学习至关重要",
+    "quality_contribution": "基本掌握，能正确应用",
+    "learning_method_contribution": "通过实践练习学习，效果较好",
+    "knowledge_type_contribution": "理解性知识，需要掌握原理和逻辑"
+  },
+  "evaluation_summary": "JavaScript基础语法是前端开发的核心知识点，难度适中但重要性很高，用户通过实践练习达到良好掌握水平，获得较高智慧值。"
+}
+```
+
+## 5. 学习方式映射
+
+### 5.1 学习方式类型
+- **reading**：观看视频/阅读文章（系数0.8）
+- **practice**：完成练习题（系数1.0）
+- **hands-on**：实践操作（系数1.2）
+- **creation**：创作内容（系数1.5）
+
+### 5.2 前端传参示例
+```javascript
+// 用户完成学习后调用
+const wisdomRequest = {
+  knowledge_point_name: "React Hooks",
+  subject_area: "前端开发",
+  knowledge_description: "React 16.8引入的新特性，允许在函数组件中使用state和其他React特性",
+  content_type: "实践技能",
+  learning_method: "hands-on", // 实践操作
+  completion_score: 92
+};
+```
+
+## 6. API调用流程
+
+### 6.1 简化调用流程
+```
+1. 用户完成学习任务
+2. 收集基础参数（知识点信息、学习方式、完成分数）
+3. 调用大语言模型API
+4. 获得智慧值和评估结果
+5. 更新用户智慧值记录
+```
+
+### 6.2 错误处理
+- API调用失败时使用默认智慧值计算公式
+- 提供降级方案：`智慧值 = 完成分数 × 1.2`
+- 记录调用日志，便于问题排查
+
+### 6.3 缓存策略
+- 相同知识点的评估结果可缓存24小时
+- 不同完成分数需要重新计算
+- 缓存key：`{knowledge_point_name}_{subject_area}_{completion_score_range}`
+
+## 7. 数据库存储
+
+### 7.1 智慧值记录表（简化版）
+```sql
+CREATE TABLE wisdom_records_simple (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    knowledge_point_id BIGINT NOT NULL,
+    knowledge_point_name VARCHAR(255) NOT NULL,
+    subject_area VARCHAR(100) NOT NULL,
+    learning_method ENUM('reading', 'practice', 'hands-on', 'creation'),
+    completion_score DECIMAL(5,2),
+    difficulty_coefficient DECIMAL(3,2),
+    importance_coefficient DECIMAL(3,2),
+    quality_coefficient DECIMAL(3,2),
+    learning_method_coefficient DECIMAL(3,2),
+    knowledge_type_coefficient DECIMAL(3,2),
+    base_wisdom_value DECIMAL(10,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_knowledge (user_id, knowledge_point_id),
+    INDEX idx_created_at (created_at)
+);
+```
+
+## 8. 性能优化
+
+### 8.1 批量处理
+- 支持批量知识点评估
+- 合并相似的API调用请求
+- 异步处理，避免阻塞用户操作
+
+### 8.2 成本控制
+- 设置API调用频率限制（每用户每小时最多50次）
+- 优先级队列处理重要请求
+- 监控API使用量和成本
+
+### 8.3 质量保证
+- 设置智慧值合理范围检查（10-1000）
+- 对异常结果进行人工审核
+- 建立反馈机制，持续优化prompt
+
+## 9. 实施要点
+
+### 9.1 第一阶段实施
+1. 实现基础的知识点评估API调用
+2. 建立简化的数据库表结构
+3. 开发智慧值计算和存储逻辑
+4. 实现基础的错误处理和降级方案
+
+### 9.2 监控指标
+- API调用成功率 > 95%
+- 平均响应时间 < 2秒
+- 智慧值计算准确性
+- 用户满意度反馈
+
+### 9.3 后续扩展
+- 根据用户反馈优化评估标准
+- 逐步引入更多知识点类型
+- 为后续版本的个性化功能预留接口
+
+通过以上简化设计，我们可以快速实现智慧值系统的核心功能，为用户提供基础的学习成果量化，同时为后续功能扩展奠定基础。

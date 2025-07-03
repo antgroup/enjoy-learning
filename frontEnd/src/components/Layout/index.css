@@ -1,0 +1,263 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw; /* 固定为视口宽度 */
+  overflow: hidden;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto; /* 允许垂直滚动 */
+  overflow-x: hidden; /* 隐藏水平滚动 */
+  background-color: #f5f5f5;
+  width: 100vw; /* 固定为视口宽度 */
+  box-sizing: border-box;
+  position: relative;
+  padding-bottom: 70px; /* 为底部导航栏留出空间 */
+}
+
+/* 为所有页面内容添加宽度限制 */
+.main-content > * {
+  width: 100vw; /* 固定为视口宽度 */
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* 底部导航栏 - Material UI 样式 */
+.bottom-nav {
+  height: 64px; /* Material Design 标准高度 */
+  background-color: #ffffff;
+  border-top: none; /* 移除边框 */
+  display: flex;
+  align-items: stretch;
+  z-index: 1000; /* 提高层级 */
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.12), 0 -1px 2px rgba(0, 0, 0, 0.24); /* Material Design 阴影 */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  box-sizing: border-box;
+  padding: 0;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif; /* Material Design 字体 */
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: rgba(0, 0, 0, 0.54); /* Material Design 次要文本颜色 */
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); /* Material Design 缓动函数 */
+  padding: 8px 12px;
+  flex: 1;
+  height: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  position: relative;
+  width: 33.33vw;
+  max-width: 33.33vw;
+  min-width: 33.33vw;
+  border-radius: 0; /* Material Design 通常不使用圆角 */
+  overflow: hidden; /* 为涟漪效果准备 */
+}
+
+/* Material Design 涟漪效果 */
+.nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, transparent 1%, rgba(25, 118, 210, 0.1) 1%);
+  background-size: 15000%;
+  transition: background-size 0.3s;
+  opacity: 0;
+}
+
+.nav-item:active::before {
+  background-size: 100%;
+  opacity: 1;
+  transition: background-size 0s, opacity 0.15s;
+}
+
+.nav-item:hover {
+  color: #1976d2; /* Material Design 主色调 */
+  background-color: rgba(25, 118, 210, 0.04); /* 轻微的悬停背景 */
+}
+
+.nav-item.active {
+  color: #1976d2; /* Material Design 主色调 */
+  background-color: rgba(25, 118, 210, 0.08); /* 激活状态背景 */
+}
+
+/* 激活状态的指示器 */
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 2px;
+  background-color: #1976d2;
+  border-radius: 0 0 2px 2px;
+}
+
+.nav-icon {
+  font-size: 24px; /* Material Design 图标大小 */
+  margin-bottom: 4px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.nav-item:active .nav-icon {
+  transform: scale(0.95); /* 点击时轻微缩放 */
+}
+
+.nav-label {
+  font-size: 12px;
+  font-weight: 400; /* Material Design 字重 */
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  width: 100%;
+  flex-shrink: 0;
+  letter-spacing: 0.4px; /* Material Design 字间距 */
+}
+
+.nav-item.active .nav-label {
+  font-weight: 500; /* 激活状态字重 */
+}
+
+/* 添加 Material UI 字体 */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .main-content {
+    padding-bottom: 60px;
+  }
+  
+  .bottom-nav {
+    height: 60px;
+  }
+  
+  .nav-item {
+    padding: 6px 8px;
+    width: 33.33vw;
+    max-width: 33.33vw;
+    min-width: 33.33vw;
+  }
+  
+  .nav-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+  
+  .nav-label {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding-bottom: 56px;
+  }
+  
+  .bottom-nav {
+    height: 56px; /* Material Design 移动端标准高度 */
+  }
+  
+  .nav-item {
+    padding: 4px 6px;
+    width: 33.33vw;
+    max-width: 33.33vw;
+    min-width: 33.33vw;
+  }
+  
+  .nav-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    margin-bottom: 2px;
+  }
+  
+  .nav-label {
+    font-size: 10px;
+  }
+}
+
+/* Material Design 主题色变量 */
+:root {
+  --md-primary: #1976d2;
+  --md-primary-light: #42a5f5;
+  --md-primary-dark: #1565c0;
+  --md-secondary: #dc004e;
+  --md-surface: #ffffff;
+  --md-background: #fafafa;
+  --md-on-surface: rgba(0, 0, 0, 0.87);
+  --md-on-surface-variant: rgba(0, 0, 0, 0.54);
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .bottom-nav {
+    background-color: #1e1e1e;
+    box-shadow: 0 -1px 3px rgba(255, 255, 255, 0.12), 0 -1px 2px rgba(255, 255, 255, 0.24);
+  }
+  
+  .nav-item {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .nav-item:hover {
+    color: #90caf9;
+    background-color: rgba(144, 202, 249, 0.04);
+  }
+  
+  .nav-item.active {
+    color: #90caf9;
+    background-color: rgba(144, 202, 249, 0.08);
+  }
+  
+  .nav-item.active::after {
+    background-color: #90caf9;
+  }
+}
+
+/* 无障碍支持 */
+@media (prefers-reduced-motion: reduce) {
+  .nav-item,
+  .nav-icon,
+  .nav-item::before {
+    transition: none;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .bottom-nav {
+    border-top: 2px solid #000;
+  }
+  
+  .nav-item.active {
+    background-color: rgba(25, 118, 210, 0.2);
+  }
+}

@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社区 - 快乐学习</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-gray);
+        }
+
+        .community-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 80px; /* 为底部导航栏留出空间 */
+        }
+
+        /* 社区顶部标签栏 */
+        .community-tabs {
+            display: flex;
+            background-color: white;
+            border-radius: 8px;
+            padding: 4px;
+            margin: 16px;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 56px;
+            z-index: 10;
+        }
+
+        .community-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-medium);
+            cursor: pointer;
+        }
+
+        .community-tab.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* 好友推荐区 */
+        .friends-row {
+            display: flex;
+            overflow-x: auto;
+            padding: 16px;
+            gap: 16px;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .friends-row::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Edge */
+        }
+
+        .friend-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 72px;
+        }
+
+        .friend-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--bg-gray);
+            margin-bottom: 8px;
+            position: relative;
+            border: 2px solid white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .friend-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .friend-online {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 14px;
+            height: 14px;
+            background-color: var(--success-color);
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+
+        .friend-name {
+            font-size: 12px;
+            color: var(--text-medium);
+            text-align: center;
+            max-width: 72px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 动态卡片 */
+        .post-card {
+            background-color: white;
+            border-radius: 12px;
+            margin: 16px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-out;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .post-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .post-user {
+            margin-left: 12px;
+            flex: 1;
+        }
+
+        .post-username {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .post-time {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        .post-content {
+            padding: 0 16px 16px;
+        }
+
+        .post-text {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .post-media {
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0 0 12px;
+        }
+
+        .post-media img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+
+        .post-knowledge {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background-color: rgba(30, 136, 229, 0.1);
+            color: var(--primary-color);
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .post-knowledge:hover {
+            background-color: rgba(30, 136, 229, 0.2);
+        }
+
+        .post-actions {
+            display: flex;
+            border-top: 1px solid var(--divider-color);
+            padding: 12px 16px;
+        }
+
+        .post-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--text-medium);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .post-action:hover {
+            color: var(--primary-color);
+        }
+
+        .post-action span {
+            margin-left: 6px;
+        }
+
+        /* 创建内容浮动按钮 */
+        .create-post-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 20;
+        }
+
+        .create-post-btn:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* 加载更多指示器 */
+        .loading-more {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-medium);
+            font-size: 14px;
+        }
+
+        /* 空状态样式 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-medium);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            color: var(--primary-light);
+            margin-bottom: 16px;
+            opacity: 0.8;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            max-width: 250px;
+            line-height: 1.5;
+        }
+
+        /* 社区广场样式 */
+        .community-section {
+            padding: 16px;
+        }
+
+        .section-header {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header a {
+            font-size: 14px;
+            color: var(--primary-color);
+            font-weight: normal;
+        }
+
+        .topic-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .topic-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            flex: 1 0 calc(50% - 6px);
+            min-width: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .topic-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .topic-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background-color: rgba(30, 136, 229, 0.1);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .topic-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .topic-count {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* 标签切换内容区 */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+        <div class="navbar-title">社区</div>
+        <div class="navbar-actions">
+            <button class="btn btn-sm btn-outline">搜索</button>
+            <div style="width: 10px;"></div> <!-- 间隔 -->
+            <button class="btn btn-sm btn-outline">消息</button>
+        </div>
+    </div>
+
+    <!-- 社区内容 -->
+    <div class="community-container">
+        <!-- 社区标签栏 -->
+        <div class="community-tabs">
+            <div class="community-tab active" data-tab="feeds">动态</div>
+            <div class="community-tab" data-tab="friends">好友</div>
+            <div class="community-tab" data-tab="discover">发现</div>
+        </div>
+
+        <!-- 动态 Tab 内容 -->
+        <div class="tab-content active" id="feeds-content">
+            <!-- 好友推荐横向滚动条 -->
+            <div class="friends-row">
+                <div class="friend-item">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                        <div class="friend-online"></div>
+                    </div>
+                    <div class="friend-name">小明</div>
+                </div>
+                <div class="friend-item">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                    </div>
+                    <div class="friend-name">学习达人</div>
+                </div>
+                <div class="friend-item">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                        <div class="friend-online"></div>
+                    </div>
+                    <div class="friend-name">知识探索者</div>
+                </div>
+                <div class="friend-item">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                    </div>
+                    <div class="friend-name">数学爱好者</div>
+                </div>
+                <div class="friend-item">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                    </div>
+                    <div class="friend-name">编程高手</div>
+                </div>
+                <div class="friend-item">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                        <div class="friend-online"></div>
+                    </div>
+                    <div class="friend-name">小花</div>
+                </div>
+            </div>
+
+            <!-- 动态内容卡片 -->
+            <div class="post-card">
+                <div class="post-header">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                    </div>
+                    <div class="post-user">
+                        <div class="post-username">学习达人</div>
+                        <div class="post-time">10分钟前</div>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <div class="post-text">
+                        今天学习了二分查找算法的核心原理，感觉收获很大！分享一下我的笔记和思考过程，希望对大家有帮助。特别是这个算法在处理有序数据时的高效性令人印象深刻。
+                    </div>
+                    <div class="post-media">
+                        <img src="https://via.placeholder.com/500x300" alt="图片内容">
+                    </div>
+                    <a href="knowledge-map.html" class="post-knowledge">🔍 算法 • 二分查找</a>
+                </div>
+                <div class="post-actions">
+                    <div class="post-action">
+                        👍 <span>赞 (24)</span>
+                    </div>
+                    <div class="post-action">
+                        💬 <span>评论 (6)</span>
+                    </div>
+                    <div class="post-action">
+                        🔄 <span>分享</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="post-card">
+                <div class="post-header">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                    </div>
+                    <div class="post-user">
+                        <div class="post-username">知识探索者</div>
+                        <div class="post-time">2小时前</div>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <div class="post-text">
+                        刚刚完成了"数据库索引原理"的学习，智慧值提升了15点！这个知识点对我理解数据库性能优化非常有帮助，特别是B树和B+树索引结构的区别，现在终于明白了。
+                    </div>
+                    <a href="knowledge-tree.html" class="post-knowledge">🌳 数据库 • 索引原理</a>
+                </div>
+                <div class="post-actions">
+                    <div class="post-action">
+                        👍 <span>赞 (18)</span>
+                    </div>
+                    <div class="post-action">
+                        💬 <span>评论 (3)</span>
+                    </div>
+                    <div class="post-action">
+                        🔄 <span>分享</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="post-card">
+                <div class="post-header">
+                    <div class="friend-avatar">
+                        <img src="https://via.placeholder.com/56" alt="用户头像">
+                    </div>
+                    <div class="post-user">
+                        <div class="post-username">小明</div>
+                        <div class="post-time">昨天</div>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <div class="post-text">
+                        打卡第30天！坚持每天学习新知识真的改变了我的生活习惯。今天在"知识融合游戏"中获得了96分，对HTTP状态码的记忆更加牢固了，分享一下我总结的记忆技巧。
+                    </div>
+                    <div class="post-media">
+                        <img src="https://via.placeholder.com/500x200" alt="图片内容">
+                    </div>
+                    <a href="review.html" class="post-knowledge">🔄 Web开发 • HTTP状态码</a>
+                </div>
+                <div class="post-actions">
+                    <div class="post-action">
+                        👍 <span>赞 (42)</span>
+                    </div>
+                    <div class="post-action">
+                        💬 <span>评论 (12)</span>
+                    </div>
+                    <div class="post-action">
+                        🔄 <span>分享</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 加载更多指示器 -->
+            <div class="loading-more">
+                <div class="loading"></div>
+                <div style="margin-top: 8px;">加载更多内容...</div>
+            </div>
+        </div>
+
+        <!-- 好友 Tab 内容 -->
+        <div class="tab-content" id="friends-content">
+            <div class="community-section">
+                <div class="section-header">
+                    <span>学习小组</span>
+                    <a href="#">创建小组</a>
+                </div>
+                <div class="topic-cards">
+                    <div class="topic-card">
+                        <div class="topic-icon">👨‍💻</div>
+                        <div class="topic-title">算法学习小组</div>
+                        <div class="topic-count">8位成员</div>
+                    </div>
+                    <div class="topic-card">
+                        <div class="topic-icon">📱</div>
+                        <div class="topic-title">移动开发交流</div>
+                        <div class="topic-count">12位成员</div>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <span>好友列表</span>
+                    <a href="#">添加好友</a>
+                </div>
+
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="friend-avatar">
+                            <img src="https://via.placeholder.com/56" alt="用户头像">
+                            <div class="friend-online"></div>
+                        </div>
+                        <div class="post-user">
+                            <div class="post-username">小明</div>
+                            <div class="post-time">正在学习 "设计模式"</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline">查看</button>
+                    </div>
+                </div>
+
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="friend-avatar">
+                            <img src="https://via.placeholder.com/56" alt="用户头像">
+                        </div>
+                        <div class="post-user">
+                            <div class="post-username">学习达人</div>
+                            <div class="post-time">最近完成 "TCP/IP协议"</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline">查看</button>
+                    </div>
+                </div>
+
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="friend-avatar">
+                            <img src="https://via.placeholder.com/56" alt="用户头像">
+                            <div class="friend-online"></div>
+                        </div>
+                        <div class="post-user">
+                            <div class="post-username">知识探索者</div>
+                            <div class="post-time">与你有5个共同学习领域</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline">查看</button>
+                    </div>
+                </div>
+
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="friend-avatar">
+                            <img src="https://via.placeholder.com/56" alt="用户头像">
+                        </div>
+                        <div class="post-user">
+                            <div class="post-username">编程高手</div>
+                            <div class="post-time">3天前活跃</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline">查看</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 发现 Tab 内容 -->
+        <div class="tab-content" id="discover-content">
+            <div class="community-section">
+                <div class="section-header">
+                    <span>热门学习话题</span>
+                    <a href="#">更多</a>
+                </div>
+
+                <div class="topic-cards">
+                    <div class="topic-card">
+                        <div class="topic-icon" style="background-color: rgba(76, 175, 80, 0.1); color: var(--tree-color);">🧠</div>
+                        <div class="topic-title">AI学习方法</div>
+                        <div class="topic-count">2.3k人参与</div>
+                    </div>
+                    <div class="topic-card">
+                        <div class="topic-icon" style="background-color: rgba(255, 152, 0, 0.1); color: var(--map-color);">📊</div>
+                        <div class="topic-title">数据可视化</div>
+                        <div class="topic-count">1.8k人参与</div>
+                    </div>
+                    <div class="topic-card">
+                        <div class="topic-icon" style="background-color: rgba(156, 39, 176, 0.1); color: var(--globe-color);">🔐</div>
+                        <div class="topic-title">网络安全入门</div>
+                        <div class="topic-count">1.5k人参与</div>
+                    </div>
+                    <div class="topic-card">
+                        <div class="topic-icon" style="background-color: rgba(30, 136, 229, 0.1); color: var(--primary-color);">🖥️</div>
+                        <div class="topic-title">前端开发技巧</div>
+                        <div class="topic-count">3.2k人参与</div>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <span>推荐共享知识</span>
+                    <a href="#">筛选</a>
+                </div>
+
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="friend-avatar">
+                            <img src="https://via.placeholder.com/56" alt="用户头像">
+                        </div>
+                        <div class="post-user">
+                            <div class="post-username">程序员小王</div>
+                            <div class="post-time">分享了学习笔记</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        <div class="post-text">
+                            分享我整理的《快速掌握React Hooks核心概念》思维导图，包含useState、useEffect、useContext等所有Hooks的使用方法和注意事项，希望对大家有帮助！
+                        </div>
+                        <div class="post-media">
+                            <img src="https://via.placeholder.com/500x250" alt="思维导图">
+                        </div>
+                        <a href="#" class="post-knowledge">🔍 前端开发 • React</a>
+                    </div>
+                    <div class="post-actions">
+                        <div class="post-action">
+                            👍 <span>赞 (156)</span>
+                        </div>
+                        <div class="post-action">
+                            💬 <span>评论 (32)</span>
+                        </div>
+                        <div class="post-action">
+                            📥 <span>收藏</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="friend-avatar">
+                            <img src="https://via.placeholder.com/56" alt="用户头像">
+                        </div>
+                        <div class="post-user">
+                            <div class="post-username">数据科学家</div>
+                            <div class="post-time">分享了学习资源</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        <div class="post-text">
+                            整理了一份Python数据分析入门到进阶的学习路线图，包含了从基础语法到pandas、matplotlib、scikit-learn等库的使用，以及实战项目推荐。
+                        </div>
+                        <a href="#" class="post-knowledge">📊 数据科学 • Python</a>
+                    </div>
+                    <div class="post-actions">
+                        <div class="post-action">
+                            👍 <span>赞 (89)</span>
+                        </div>
+                        <div class="post-action">
+                            💬 <span>评论 (14)</span>
+                        </div>
+                        <div class="post-action">
+                            📥 <span>收藏</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建内容浮动按钮 -->
+    <div class="create-post-btn">+</div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <a href="knowledge-map.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">🌍</div>
+            <div>知识地图</div>
+        </a>
+        <a href="review.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">📝</div>
+            <div>复习</div>
+        </a>
+        <a href="community.html" class="bottom-nav-item active">
+            <div class="bottom-nav-icon">👥</div>
+            <div>社区</div>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <div class="bottom-nav-icon">👤</div>
+            <div>我的</div>
+        </a>
+    </div>
+
+    <script>
+        // 标签页切换功能
+        const tabs = document.querySelectorAll('.community-tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有标签和内容的active类
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                // 为当前标签添加active类
+                tab.classList.add('active');
+
+                // 显示对应的内容
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-content`).classList.add('active');
+            });
+        });
+
+        // 为底部导航项添加点击效果
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        bottomNavItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                    alert('该功能正在开发中，敬请期待！');
+                }
+            });
+        });
+
+        // 为点赞按钮添加交互
+        const likeButtons = document.querySelectorAll('.post-action:first-child');
+        likeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                this.style.color = 'var(--primary-color)';
+                this.style.fontWeight = 'bold';
+            });
+        });
+
+        // 为创建按钮添加交互
+        const createPostBtn = document.querySelector('.create-post-btn');
+        createPostBtn.addEventListener('click', () => {
+            alert('创建内容功能正在开发中，敬请期待！');
+        });
+
+        // 模拟加载更多内容
+        const loadingMore = document.querySelector('.loading-more');
+        let isLoading = false;
+
+        function loadMoreContent() {
+            if (isLoading) return;
+
+            isLoading = true;
+            loadingMore.querySelector('.loading').style.display = 'inline-block';
+            loadingMore.querySelector('div:last-child').textContent = '正在加载...';
+
+            // 模拟延迟加载
+            setTimeout(() => {
+                isLoading = false;
+                loadingMore.querySelector('.loading').style.display = 'none';
+                loadingMore.querySelector('div:last-child').textContent = '加载更多内容...';
+
+                // 这里应该添加新的内容卡片，但现在只是模拟
+                alert('已加载全部内容');
+            }, 1500);
+        }
+
+        // 监听滚动到底部事件
+        const communityContainer = document.querySelector('.community-container');
+        communityContainer.addEventListener('scroll', () => {
+            const scrollHeight = communityContainer.scrollHeight;
+            const scrollTop = communityContainer.scrollTop;
+            const clientHeight = communityContainer.clientHeight;
+
+            // 当滚动到底部时加载更多
+            if (scrollHeight - scrollTop - clientHeight < 50 && document.getElementById('feeds-content').classList.contains('active')) {
+                loadMoreContent();
+            }
+        });
+    </script>
+</body>
+</html>

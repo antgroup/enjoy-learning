@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快乐学习 - 让学习更有趣</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .home-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            width: 100px;
+            height: 100px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 50px;
+            font-weight: bold;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .tagline {
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin: 40px 0;
+        }
+        
+        .feature-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+        
+        .feature-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .feature-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+        .feature-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+        
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        
+        .feature-desc {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 40px;
+        }
+        
+        .login-btn {
+            background-color: white;
+            color: var(--primary-color);
+            padding: 12px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .guide-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .guide-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="home-container">
+        <div class="header">
+            <div class="logo">学</div>
+            <h1>快乐学习</h1>
+            <p class="tagline">让学习更有趣，让知识更立体</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <h3 class="feature-title">知识地图</h3>
+                <p class="feature-desc">以地图形式展示知识体系，让你从宏观上把握知识领域，发现知识间的关联。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🌳</div>
+                <h3 class="feature-title">知识树</h3>
+                <p class="feature-desc">知识如树木般生长，从根基到枝叶，清晰展示学习路径与知识体系。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3 class="feature-title">科学复习</h3>
+                <p class="feature-desc">基于艾宾浩斯遗忘曲线的智能复习提醒，让记忆更持久。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🧩</div>
+                <h3 class="feature-title">知识融合</h3>
+                <p class="feature-desc">通过趣味游戏和多维度练习，加深理解，融会贯通。</p>
+            </div>
+        </div>
+        
+        <div class="btn-row">
+            <a href="login.html" class="login-btn">登录/注册</a>
+            <a href="guide.html" class="guide-btn">查看引导</a>
+        </div>
+    </div>
+    
+    <script>
+        // 添加简单的进入动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const features = document.querySelectorAll('.feature-card');
+            features.forEach((feature, index) => {
+                setTimeout(() => {
+                    feature.style.opacity = '1';
+                }, 100 * index);
+            });
+        });
+    </script>
+</body>
+</html> 

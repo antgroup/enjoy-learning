@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新手引导 - 快乐学习</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: var(--bg-white);
+        }
+
+        .guide-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-wrapper {
+            display: flex;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .slide-content {
+            max-width: 80%;
+        }
+
+        .slide-image {
+            width: 220px;
+            height: 220px;
+            background-color: var(--primary-light);
+            border-radius: 50%;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 60px;
+            font-weight: bold;
+        }
+
+        .slide-title {
+            margin-bottom: 16px;
+        }
+
+        .slide-description {
+            color: var(--text-medium);
+        }
+
+        .guide-footer {
+            padding: 24px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--divider-color);
+        }
+
+        .progress-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            width: 24px;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .slide:nth-child(1) .slide-image {
+            background-color: var(--map-color);
+        }
+
+        .slide:nth-child(2) .slide-image {
+            background-color: var(--tree-color);
+        }
+
+        .slide:nth-child(3) .slide-image {
+            background-color: var(--globe-color);
+        }
+
+        .slide:nth-child(4) .slide-image {
+            background-color: var(--primary-color);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animated {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .animated-delay-1 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .animated-delay-2 {
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="guide-container">
+        <div class="slide-wrapper">
+            <!-- 引导页1：知识地图 -->
+            <div class="slide">
+                <div class="slide-content">
+                    <div class="slide-image">地图</div>
+                    <h2 class="slide-title animated">知识地图</h2>
+                    <p class="slide-description animated animated-delay-1">以地图形式展示知识，让你从宏观上把握知识体系，就像探索一块新大陆。</p>
+                    <p class="slide-description animated animated-delay-2">不同区域代表不同知识领域，路径连接相关知识点。</p>
+                </div>
+            </div>
+            
+            <!-- 引导页2：知识树 -->
+            <div class="slide">
+                <div class="slide-content">
+                    <div class="slide-image">树</div>
+                    <h2 class="slide-title">知识树</h2>
+                    <p class="slide-description">知识如树木般生长，从根基知识到枝叶延伸，一目了然。</p>
+                    <p class="slide-description">随着学习的深入，见证你的知识树逐渐枝繁叶茂。</p>
+                </div>
+            </div>
+            
+            <!-- 引导页3：知识球 -->
+            <div class="slide">
+                <div class="slide-content">
+                    <div class="slide-image">球</div>
+                    <h2 class="slide-title">知识球</h2>
+                    <p class="slide-description">立体展现知识之间的复杂关联，多维度理解知识。</p>
+                    <p class="slide-description">旋转、缩放，从不同角度探索知识之间的联系。</p>
+                </div>
+            </div>
+            
+            <!-- 引导页4：智慧成长 -->
+            <div class="slide">
+                <div class="slide-content">
+                    <div class="slide-image">成长</div>
+                    <h2 class="slide-title">智慧成长</h2>
+                    <p class="slide-description">科学的复习提醒，让记忆更加牢固。</p>
+                    <p class="slide-description">趣味的学习方式，让你在游戏中巩固知识。</p>
+                    <div class="mt-32">
+                        <a href="knowledge-map.html" class="btn btn-primary">开始体验</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="guide-footer">
+        <button id="skipBtn" class="btn btn-outline">跳过</button>
+        <div class="progress-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <button id="nextBtn" class="btn btn-primary">下一步</button>
+    </div>
+
+    <script>
+        const slideWrapper = document.querySelector('.slide-wrapper');
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        const nextBtn = document.getElementById('nextBtn');
+        const skipBtn = document.getElementById('skipBtn');
+        
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+        
+        // 初始化动画类
+        function resetAnimations() {
+            slides.forEach(slide => {
+                const title = slide.querySelector('.slide-title');
+                const descriptions = slide.querySelectorAll('.slide-description');
+                
+                title.classList.remove('animated');
+                descriptions.forEach(desc => {
+                    desc.classList.remove('animated');
+                });
+                
+                // 重置动画以触发新的动画
+                void title.offsetWidth;
+                descriptions.forEach(desc => {
+                    void desc.offsetWidth;
+                });
+            });
+        }
+        
+        function animateCurrentSlide() {
+            const title = slides[currentSlide].querySelector('.slide-title');
+            const descriptions = slides[currentSlide].querySelectorAll('.slide-description');
+            
+            title.classList.add('animated');
+            descriptions.forEach(desc => {
+                desc.classList.add('animated');
+            });
+        }
+        
+        function goToSlide(index) {
+            if (index < 0) {
+                index = 0;
+            } else if (index >= totalSlides) {
+                // 最后一页点击下一步，跳转到主页面
+                window.location.href = 'knowledge-map.html';
+                return;
+            }
+            
+            currentSlide = index;
+            slideWrapper.style.transform = `translateX(-${index * 100}%)`;
+            
+            // 更新指示点
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentSlide);
+            });
+            
+            // 更新按钮文本
+            if (currentSlide === totalSlides - 1) {
+                nextBtn.textContent = '开始体验';
+            } else {
+                nextBtn.textContent = '下一步';
+            }
+            
+            // 添加动画
+            resetAnimations();
+            setTimeout(animateCurrentSlide, 100);
+        }
+        
+        // 事件监听
+        nextBtn.addEventListener('click', () => {
+            goToSlide(currentSlide + 1);
+        });
+        
+        skipBtn.addEventListener('click', () => {
+            window.location.href = 'knowledge-map.html';
+        });
+        
+        // 点击指示点导航
+        dots.forEach((dot, i) => {
+            dot.addEventListener('click', () => {
+                goToSlide(i);
+            });
+        });
+        
+        // 初始化第一页动画
+        setTimeout(animateCurrentSlide, 100);
+        
+        // 支持滑动手势（移动端友好）
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        slideWrapper.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+        
+        slideWrapper.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchStartX - touchEndX > 50) {
+                // 向左滑动，下一页
+                goToSlide(currentSlide + 1);
+            } else if (touchEndX - touchStartX > 50) {
+                // 向右滑动，上一页
+                goToSlide(currentSlide - 1);
+            }
+        }, false);
+    </script>
+</body>
+</html> 

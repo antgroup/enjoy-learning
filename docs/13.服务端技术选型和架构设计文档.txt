@@ -1,0 +1,696 @@
+# 快乐学习软件服务端技术选型和架构设计文档
+
+## 1. 项目概述
+
+### 1.1 项目背景
+"快乐学习"是一款将学习过程游戏化、可视化的教育软件，通过知识地图、知识树、知识球等多种直观的知识呈现方式，结合智慧值系统和艾宾浩斯记忆曲线，让用户在探索和成长的过程中体验学习的乐趣。
+
+### 1.2 核心功能模块
+- **知识可视化系统**：知识地图、知识树、知识球三种展示模式
+- **智慧值系统**：基于艾宾浩斯记忆曲线的智慧值计算与衰减
+- **学习记录系统**：笔记管理、学习数据分析、目标设定
+- **用户管理系统**：用户认证、权限控制、个人信息管理
+- **内容管理系统**：知识点管理、学习资源管理
+
+### 1.3 技术目标
+- 高性能：支持大量用户并发访问
+- 高可用：99.9%系统可用性
+- 可扩展：支持功能模块独立扩展
+- 安全性：保障用户数据安全
+- 易维护：清晰的代码结构和文档
+
+## 2. 技术选型
+
+### 2.1 后端框架选型
+
+#### 2.1.1 Spring Boot
+**选择理由**：
+- 成熟稳定的Java生态系统
+- 丰富的第三方库和中间件支持
+- 强大的事务管理和数据访问能力
+- 完善的安全框架支持
+- 团队技术栈匹配
+
+**版本选择**：Spring Boot 2.7.x
+- 稳定性好，社区支持完善
+- 兼容性强，第三方库支持度高
+
+#### 2.1.2 微服务架构考虑
+当前阶段采用单体架构，后期可拆分为微服务：
+- **用户服务**：用户管理、认证授权
+- **知识服务**：知识点管理、知识结构
+- **智慧值服务**：智慧值计算、记忆曲线
+- **学习记录服务**：笔记管理、学习数据
+- **通知服务**：消息推送、提醒功能
+
+### 2.2 数据库选型
+
+#### 2.2.1 MongoDB（主数据库）
+**选择理由**：
+- 文档型数据库，适合存储复杂的知识结构
+- 灵活的Schema设计，便于快速迭代
+- 优秀的水平扩展能力
+- 支持复杂查询和聚合操作
+- 适合存储JSON格式的知识树、地图数据
+- 支持事务操作，保证数据一致性
+
+**使用场景**：
+- 用户基础信息和配置
+- 知识点数据存储
+- 知识树结构数据
+- 用户学习记录
+- 笔记内容存储
+- 系统配置数据
+
+**版本选择**：MongoDB 5.0+
+- 支持ACID事务操作
+- 性能优化显著
+- 安全性增强
+- 更好的聚合管道性能
+
+#### 2.2.2 Redis（缓存数据库）
+**选择理由**：
+- 高性能内存数据库
+- 支持多种数据结构
+- 适合实时智慧值计算
+- 支持发布订阅模式
+
+**使用场景**：
+- 智慧值实时计算缓存
+- 用户会话管理
+- 热点数据缓存
+- 排行榜数据
+- 分布式锁
+
+### 2.3 开发工具和框架
+
+#### 2.3.1 数据访问框架
+**Spring Data MongoDB**：
+- 与Spring Boot无缝集成
+- 提供Repository抽象层
+- 支持自定义查询方法
+- 优秀的聚合查询支持
+- 自动映射Java对象到MongoDB文档
+
+#### 2.3.2 安全框架
+**Spring Security + JWT**：
+- 成熟的安全解决方案
+- 支持多种认证方式
+- JWT无状态认证
+- 细粒度权限控制
+
+#### 2.3.3 API文档
+**Swagger/OpenAPI 3.0**：
+- 自动生成API文档
+- 支持在线测试
+- 前后端协作便利
+
+#### 2.3.4 日志框架
+**Logback + SLF4J**：
+- 高性能日志框架
+- 灵活的配置选项
+- 支持异步日志
+
+### 2.4 第三方服务集成
+
+#### 2.4.1 大模型API集成
+**用途**：笔记内容分析和知识点提取
+**技术方案**：
+- HTTP客户端：OkHttp/RestTemplate
+- 异步处理：@Async注解
+- 重试机制：Spring Retry
+- 限流控制：Resilience4j
+
+#### 2.4.2 文件存储
+**本地存储**（初期）：
+- 用户上传的笔记文件
+- 系统生成的图片资源
+
+**云存储**（扩展）：
+- 阿里云OSS/腾讯云COS
+- 支持CDN加速
+
+## 3. 系统架构设计
+
+### 3.1 整体架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        前端应用层                              │
+│  H5页面 (React/Vue) + 移动端App + 管理后台                      │
+└─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        API网关层                              │
+│  Nginx + Spring Boot Gateway (未来微服务时)                    │
+└─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      业务服务层                               │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────┐ │
+│  │  用户管理    │ │  知识管理    │ │  智慧值计算  │ │  学习记录 │ │
+│  │  模块       │ │  模块       │ │  模块       │ │  模块    │ │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      数据访问层                               │
+│  Spring Data MongoDB + MongoDB Driver + Redis Client        │
+└─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      数据存储层                               │
+│  ┌─────────────┐ ┌─────────────┐                             │
+│  │   MongoDB   │ │    Redis    │                             │
+│  │  (主数据库)  │ │   (缓存)    │                             │
+│  └─────────────┘ └─────────────┘                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 分层架构设计
+
+#### 3.2.1 Controller层
+**职责**：
+- 接收HTTP请求
+- 参数验证和转换
+- 调用Service层业务逻辑
+- 返回统一格式响应
+
+**设计原则**：
+- RESTful API设计
+- 统一异常处理
+- 统一返回格式
+- 请求日志记录
+
+#### 3.2.2 Service层
+**职责**：
+- 业务逻辑处理
+- 事务管理
+- 数据校验
+- 第三方服务调用
+
+**设计原则**：
+- 单一职责原则
+- 接口与实现分离
+- 事务边界清晰
+- 异常处理完善
+
+#### 3.2.3 Repository层
+**职责**：
+- 数据访问操作
+- MongoDB查询语句管理
+- 数据映射转换
+
+**设计原则**：
+- 数据访问抽象
+- 查询优化
+- 连接池管理
+- 事务支持
+
+### 3.3 核心模块设计
+
+#### 3.3.1 用户管理模块
+
+**功能特性**：
+- 用户注册/登录
+- JWT认证
+- 权限控制
+- 个人信息管理
+
+#### 3.3.2 知识管理模块
+
+**功能特性**：
+- 知识点CRUD操作
+- 知识树结构管理
+- 知识关联关系
+- 知识内容搜索
+
+#### 3.3.3 智慧值计算模块
+
+**功能特性**：
+- 艾宾浩斯记忆曲线计算
+- 智慧值实时更新
+- 复习提醒算法
+- 个性化参数调整
+
+#### 3.3.4 学习记录模块
+
+**功能特性**：
+- 学习活动记录
+- 笔记管理
+- 大模型内容分析
+- 学习数据统计
+
+## 4. 数据库设计
+
+### 4.1 MongoDB集合设计
+
+#### 4.1.1 用户集合（users）
+```javascript
+{
+  "_id": ObjectId,
+  "username": "string",
+  "email": "string",
+  "passwordHash": "string",
+  "profile": {
+    "nickname": "string",
+    "avatar": "string",
+    "level": "number",
+    "totalWisdom": "number"
+  },
+  "settings": {
+    "language": "string",
+    "timezone": "string",
+    "notifications": "boolean"
+  },
+  "createdAt": Date,
+  "updatedAt": Date
+}
+```
+
+#### 4.1.2 知识点集合（knowledge_points）
+```javascript
+{
+  "_id": ObjectId,
+  "title": "string",
+  "content": "string",
+  "category": "string",
+  "difficulty": "number", // 1-5
+  "importance": "number", // 1-5
+  "tags": ["string"],
+  "prerequisites": ["ObjectId"], // 前置知识点
+  "relatedPoints": ["ObjectId"], // 相关知识点
+  "metadata": {
+    "estimatedTime": "number", // 预计学习时间(分钟)
+    "contentType": "string", // text, video, interactive
+    "source": "string"
+  },
+  "createdAt": Date,
+  "updatedAt": Date
+}
+```
+
+#### 4.1.3 知识树集合（knowledge_trees）
+```javascript
+{
+  "_id": ObjectId,
+  "userId": ObjectId,
+  "name": "string",
+  "description": "string",
+  "treeData": {
+    "nodes": [
+      {
+        "id": "string",
+        "knowledgePointId": ObjectId,
+        "position": {"x": "number", "y": "number"},
+        "level": "number",
+        "status": "string" // locked, unlocked, mastered
+      }
+    ],
+    "edges": [
+      {
+        "source": "string",
+        "target": "string",
+        "type": "string"
+      }
+    ]
+  },
+  "createdAt": Date,
+  "updatedAt": Date
+}
+```
+
+#### 4.1.4 智慧值记录集合（wisdom_records）
+```javascript
+{
+  "_id": ObjectId,
+  "userId": ObjectId,
+  "knowledgePointId": ObjectId,
+  "baseWisdomValue": "number",
+  "currentWisdomValue": "number",
+  "memoryStability": "number", // 记忆稳定性参数
+  "lastStudyTime": Date,
+  "lastReviewTime": Date,
+  "reviewCount": "number",
+  "difficultyLevel": "string",
+  "importanceLevel": "string",
+  "personalFactors": {
+    "learningAbility": "number",
+    "interestLevel": "number"
+  },
+  "createdAt": Date,
+  "updatedAt": Date
+}
+```
+
+#### 4.1.5 学习笔记集合（learning_notes）
+```javascript
+{
+  "_id": ObjectId,
+  "userId": ObjectId,
+  "title": "string",
+  "content": "string",
+  "contentType": "string", // text, markdown, html
+  "tags": ["string"],
+  "relatedKnowledgePoints": ["ObjectId"],
+  "aiAnalysis": {
+    "extractedKeywords": ["string"],
+    "knowledgePoints": [
+      {
+        "concept": "string",
+        "importance": "number",
+        "category": "string"
+      }
+    ],
+    "summary": "string",
+    "analyzedAt": Date
+  },
+  "attachments": [
+    {
+      "filename": "string",
+      "fileType": "string",
+      "filePath": "string",
+      "fileSize": "number"
+    }
+  ],
+  "createdAt": Date,
+  "updatedAt": Date
+}
+```
+
+#### 4.1.6 系统配置集合（system_configs）
+```javascript
+{
+  "_id": ObjectId,
+  "configKey": "string",
+  "configValue": "mixed", // 可以是字符串、数字、对象等
+  "description": "string",
+  "category": "string",
+  "isActive": "boolean",
+  "createdAt": Date,
+  "updatedAt": Date
+}
+```
+
+### 4.2 Redis数据结构设计
+
+#### 4.2.1 用户会话管理
+```
+Key: "session:user:{userId}"
+Type: Hash
+Fields: {
+  "token": "jwt_token",
+  "loginTime": "timestamp",
+  "lastActiveTime": "timestamp",
+  "deviceInfo": "device_info"
+}
+TTL: 7天
+```
+
+#### 4.2.2 智慧值缓存
+```
+Key: "wisdom:user:{userId}"
+Type: Hash
+Fields: {
+  "totalWisdom": "number",
+  "level": "number",
+  "lastUpdateTime": "timestamp"
+}
+TTL: 1小时
+```
+
+#### 4.2.3 复习提醒队列
+```
+Key: "review:queue:{date}"
+Type: Sorted Set
+Score: 优先级分数
+Member: "userId:knowledgePointId"
+```
+
+## 5. API接口设计
+
+### 5.1 统一响应格式
+
+```java
+@Data
+public class ResultVo<T> {
+    private Integer code;
+    private String message;
+    private T data;
+    private Long timestamp;
+    
+    public static <T> ResultVo<T> success(T data) {
+        ResultVo<T> result = new ResultVo<>();
+        result.setCode(200);
+        result.setMessage("success");
+        result.setData(data);
+        result.setTimestamp(System.currentTimeMillis());
+        return result;
+    }
+}
+```
+
+### 5.2 核心API接口
+
+#### 5.2.1 用户管理API
+```
+POST /api/users/register          # 用户注册
+POST /api/users/login             # 用户登录
+GET  /api/users/profile           # 获取用户信息
+PUT  /api/users/profile           # 更新用户信息
+POST /api/users/logout            # 用户登出
+```
+
+#### 5.2.2 知识管理API
+```
+GET    /api/knowledge/points                    # 获取知识点列表
+GET    /api/knowledge/points/{id}               # 获取知识点详情
+POST   /api/knowledge/points                    # 创建知识点
+PUT    /api/knowledge/points/{id}               # 更新知识点
+DELETE /api/knowledge/points/{id}               # 删除知识点
+GET    /api/knowledge/trees/{userId}            # 获取用户知识树
+PUT    /api/knowledge/trees/{userId}            # 更新知识树
+POST   /api/knowledge/trees/{treeId}/associate  # 关联笔记到知识树
+```
+
+#### 5.2.3 智慧值API
+```
+GET  /api/wisdom/user/{userId}/total                    # 获取用户总智慧值
+GET  /api/wisdom/knowledge-point/{knowledgePointId}     # 获取知识点智慧值
+POST /api/wisdom/study-complete                         # 学习完成更新
+POST /api/wisdom/review-complete                        # 复习完成更新
+GET  /api/wisdom/review-recommendations/{userId}        # 获取复习建议
+```
+
+#### 5.2.4 学习记录API
+```
+GET    /api/notes                    # 获取笔记列表
+GET    /api/notes/{id}               # 获取笔记详情
+POST   /api/notes                    # 创建笔记
+PUT    /api/notes/{id}               # 更新笔记
+DELETE /api/notes/{id}               # 删除笔记
+POST   /api/notes/upload             # 上传笔记文件
+GET    /api/notes/{id}/analysis      # 获取笔记AI分析结果
+```
+
+## 6. 安全设计
+
+### 6.1 认证授权
+
+#### 6.1.1 JWT认证
+- 使用JWT实现无状态认证
+- Token过期时间设置为7天
+- 支持Token刷新机制
+- 密钥定期轮换
+
+#### 6.1.2 权限控制
+- 基于角色的访问控制（RBAC）
+- 细粒度权限设计
+- 接口级权限验证
+- 数据级权限控制
+
+### 6.2 数据安全
+
+#### 6.2.1 敏感数据加密
+- 用户密码使用BCrypt加密
+- 敏感配置信息加密存储
+- 传输过程使用HTTPS
+- 数据库连接加密
+
+#### 6.2.2 输入验证
+- 所有用户输入进行验证
+- 防止SQL注入（虽然使用MongoDB）
+- XSS攻击防护
+- 文件上传安全检查
+
+### 6.3 接口安全
+
+#### 6.3.1 限流控制
+- 基于IP的请求限流
+- 基于用户的请求限流
+- 滑动窗口算法
+- 恶意请求检测
+
+#### 6.3.2 CORS配置
+- 配置允许的域名
+- 限制HTTP方法
+- 设置安全头部
+- 预检请求处理
+
+## 7. 性能优化
+
+### 7.1 缓存策略
+
+#### 7.1.1 多级缓存
+- Redis缓存热点数据
+- 本地缓存频繁访问数据
+- 缓存穿透防护
+- 缓存雪崩防护
+
+#### 7.1.2 缓存设计
+- 合理设置TTL
+- 缓存预热策略
+- 缓存更新策略
+- 缓存监控
+
+### 7.2 数据库优化
+
+#### 7.2.1 MongoDB索引设计
+```javascript
+// 用户集合索引
+db.users.createIndex({"email": 1}, {"unique": true})
+db.users.createIndex({"username": 1}, {"unique": true})
+
+// 知识点集合索引
+db.knowledge_points.createIndex({"category": 1, "difficulty": 1})
+db.knowledge_points.createIndex({"tags": 1})
+db.knowledge_points.createIndex({"title": "text", "content": "text"})
+
+// 智慧值记录索引
+db.wisdom_records.createIndex({"userId": 1, "knowledgePointId": 1}, {"unique": true})
+db.wisdom_records.createIndex({"userId": 1, "lastStudyTime": -1})
+db.wisdom_records.createIndex({"lastReviewTime": 1})
+
+// 学习笔记索引
+db.learning_notes.createIndex({"userId": 1, "createdAt": -1})
+db.learning_notes.createIndex({"tags": 1})
+db.learning_notes.createIndex({"title": "text", "content": "text"})
+```
+
+#### 7.2.2 查询优化
+- 使用聚合管道优化复杂查询
+- 避免全表扫描
+- 合理使用投影
+- 分页查询优化
+
+### 7.3 异步处理
+
+#### 7.3.1 异步任务
+- 智慧值计算异步化
+- 大模型API调用异步化
+- 文件处理异步化
+- 邮件发送异步化
+
+#### 7.3.2 定时任务
+- 智慧值定时更新
+- 复习提醒定时推送
+- 数据清理定时任务
+- 统计数据定时计算
+
+## 8. 监控和运维
+
+### 8.1 应用监控
+
+#### 8.1.1 健康检查
+- 数据库连接检查
+- Redis连接检查
+- 第三方服务检查
+- 系统资源检查
+
+#### 8.1.2 性能指标
+- 接口响应时间
+- 数据库查询性能
+- 缓存命中率
+- 系统资源使用率
+
+### 8.2 日志管理
+
+#### 8.2.1 日志分类
+- 访问日志
+- 错误日志
+- 业务日志
+- 安全日志
+
+#### 8.2.2 日志处理
+- 结构化日志格式
+- 日志聚合分析
+- 异常告警机制
+- 日志归档策略
+
+### 8.3 部署运维
+
+#### 8.3.1 容器化部署
+- Docker镜像构建
+- Kubernetes编排
+- 服务发现配置
+- 负载均衡设置
+
+#### 8.3.2 CI/CD流程
+- 代码质量检查
+- 自动化测试
+- 自动化部署
+- 回滚机制
+
+## 9. 开发规范
+
+### 9.1 代码规范
+- Java编码规范
+- 注释规范
+- 命名规范
+- 包结构规范
+
+### 9.2 数据库规范
+- 集合命名规范
+- 字段命名规范
+- 索引设计规范
+- 查询优化规范
+
+### 9.3 API规范
+- RESTful设计规范
+- 参数验证规范
+- 错误处理规范
+- 文档编写规范
+
+## 10. 技术风险与应对
+
+### 10.1 技术风险
+- MongoDB数据一致性风险
+- 缓存数据不一致风险
+- 第三方服务依赖风险
+- 性能瓶颈风险
+
+### 10.2 应对策略
+- 合理使用MongoDB事务
+- 缓存更新策略优化
+- 第三方服务降级方案
+- 性能监控和优化
+
+## 11. 未来扩展
+
+### 11.1 技术演进
+- 微服务架构迁移
+- 分布式数据库
+- 消息队列引入
+- 大数据分析平台
+
+### 11.2 功能扩展
+- 多租户支持
+- 国际化支持
+- 移动端优化
+- AI能力增强
+
+通过以上技术选型和架构设计，确保"快乐学习"软件具备高性能、高可用、可扩展的技术基础，为用户提供优质的学习体验。
