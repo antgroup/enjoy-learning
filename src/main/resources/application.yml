@@ -8,8 +8,8 @@ spring:
       port: 27017
       database: enjoy_learning
       # 移除认证信息，因为本地MongoDB不需要验证
-      # username: root
-      # password: 123456
+#      username: root
+#      password: 123456
       # authentication-database: admin
   # Redis配置
   redis:

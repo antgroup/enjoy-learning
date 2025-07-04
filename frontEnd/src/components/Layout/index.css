@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
+
 .layout {
   display: flex;
   flex-direction: column;
@@ -144,9 +146,6 @@
 .nav-item.active .nav-label {
   font-weight: 500; /* 激活状态字重 */
 }
-
-/* 添加 Material UI 字体 */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
 
 /* 响应式设计 */
 @media (max-width: 768px) {
