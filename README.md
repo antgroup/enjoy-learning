@@ -27,10 +27,7 @@
 
 确保MongoDB服务已启动，然后初始化数据库：
 ```bash
-# 方法1：使用mongo shell执行初始化脚本
-mongo mongodb://localhost:27017/enjoy_learning src/main/resources/db/mongodb_init.js
-
-# 方法2：使用mongosh（MongoDB 5.0+）
+# 使用mongosh（MongoDB 5.0+）
 mongosh mongodb://localhost:27017/enjoy_learning src/main/resources/db/mongodb_init.js
 ```
 

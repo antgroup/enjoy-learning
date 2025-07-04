@@ -123,7 +123,7 @@ docker pull mongo:5.0
 docker run --name mongodb-happy-learning -p 27017:27017 -d mongo:5.0
 
 # 创建数据库和用户
-docker exec -it mongodb-happy-learning mongosh --eval "db = db.getSiblingDB('happy_learning'); db.createUser({user: 'happy_user', pwd: 'your_password', roles: [{role: 'readWrite', db: 'happy_learning'}]})"
+docker exec -it mongodb-happy-learning mongosh --eval "db = db.getSiblingDB('enjoy_learning'); db.createUser({user: 'happy_user', pwd: 'your_password', roles: [{role: 'readWrite', db: 'enjoy_learning'}]})"
 ```
 
 ### 本地安装方式
@@ -131,25 +131,26 @@ docker exec -it mongodb-happy-learning mongosh --eval "db = db.getSiblingDB('hap
 #### macOS
 ```bash
 # 使用Homebrew安装
-brew tap mongodb/brew
-brew install mongodb-community
+brew tap mongodb/brew  # 添加mongo仓库到本地
+# brew search mongodb # 查看有哪些版本
+brew install mongodb-community # 默认安装最新版本
 
 # 启动MongoDB服务
 brew services start mongodb-community
+# brew services start mongodb-community@6.0
 
-brew services start mongodb-community@6.0
 # 检查MongoDB服务状态
 brew services list | grep mongo
-ps aux | grep mongod
+# ps aux | grep mongod
 
 # 创建数据库和用户
-mongosh --eval "db = db.getSiblingDB('happy_learning'); db.createUser({user: 'root', pwd: '123456', roles: [{role: 'readWrite', db: 'happy_learning'}]})"
+mongosh --eval "db = db.getSiblingDB('enjoy_learning'); db.createUser({user: 'root', pwd: '123456', roles: [{role: 'readWrite', db: 'enjoy_learning'}]})"
 ```
 
 ### 初始化集合
 ```javascript
 // 连接到数据库
-use happy_learning
+use enjoy_learning
 
 // 创建知识树集合
 db.createCollection("knowledge_trees")
@@ -157,8 +158,6 @@ db.createCollection("knowledge_trees")
 // 创建等级规则集合
 db.createCollection("level_rules")
 
-// 创建游戏模板集合
-db.createCollection("game_templates")
 ```
 
 ## 4. Neo4j 安装与配置（可选）
@@ -246,7 +245,7 @@ PING
 ```
 
 # MongoDB配置
-MONGODB_URI=mongodb://happy_user:your_password@localhost:27017/happy_learning
+MONGODB_URI=mongodb://happy_user:your_password@localhost:27017/enjoy_learning
 
 # Neo4j配置
 NEO4J_URI=bolt://localhost:7687
